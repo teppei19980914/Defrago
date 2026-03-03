@@ -1,0 +1,165 @@
+"""見直しロジックのテスト."""
+
+from pathlib import Path
+
+import pytest
+
+from study_python.gtd.logic.review import ReviewLogic
+from study_python.gtd.models import (
+    GtdItem,
+    ItemStatus,
+    Tag,
+    TaskStatus,
+)
+from study_python.gtd.repository import GtdRepository
+
+
+@pytest.fixture
+def repo(tmp_path: Path) -> GtdRepository:
+    return GtdRepository(data_path=tmp_path / "test.json")
+
+
+@pytest.fixture
+def logic(repo: GtdRepository) -> ReviewLogic:
+    return ReviewLogic(repo)
+
+
+def _create_task(
+    repo: GtdRepository,
+    title: str = "テスト",
+    tag: Tag = Tag.TASK,
+    status: str | None = None,
+) -> GtdItem:
+    """テスト用タスクを作成する."""
+    if status is None and tag != Tag.PROJECT:
+        status = TaskStatus.NOT_STARTED.value
+    item = GtdItem(
+        title=title,
+        item_status=ItemStatus.SOMEDAY,
+        tag=tag,
+        status=status,
+    )
+    repo.add(item)
+    return item
+
+
+class TestReviewLogic:
+    """ReviewLogicのテスト."""
+
+    def test_get_review_items_completed(self, logic: ReviewLogic, repo: GtdRepository):
+        _create_task(repo, "完了", status=TaskStatus.DONE.value)
+        _create_task(repo, "未完了")
+
+        review_items = logic.get_review_items()
+        assert len(review_items) == 1
+        assert review_items[0].title == "完了"
+
+    def test_get_review_items_project(self, logic: ReviewLogic, repo: GtdRepository):
+        _create_task(repo, "プロジェクト", tag=Tag.PROJECT)
+
+        review_items = logic.get_review_items()
+        assert len(review_items) == 1
+        assert review_items[0].title == "プロジェクト"
+
+    def test_get_review_items_both(self, logic: ReviewLogic, repo: GtdRepository):
+        _create_task(repo, "完了", status=TaskStatus.DONE.value)
+        _create_task(repo, "プロジェクト", tag=Tag.PROJECT)
+        _create_task(repo, "未完了")
+
+        review_items = logic.get_review_items()
+        assert len(review_items) == 2
+
+    def test_delete_item(self, logic: ReviewLogic, repo: GtdRepository):
+        item = _create_task(repo, "削除対象", status=TaskStatus.DONE.value)
+        result = logic.delete_item(item.id)
+        assert result is not None
+        assert result.title == "削除対象"
+        assert len(repo.items) == 0
+
+    def test_delete_item_nonexistent(self, logic: ReviewLogic):
+        result = logic.delete_item("nonexistent")
+        assert result is None
+
+    def test_move_to_inbox(self, logic: ReviewLogic, repo: GtdRepository):
+        item = _create_task(repo, "Inboxに戻す", status=TaskStatus.DONE.value)
+        item.importance = 8
+        item.urgency = 3
+
+        result = logic.move_to_inbox(item.id)
+        assert result is not None
+        assert result.item_status == ItemStatus.INBOX
+        assert result.tag is None
+        assert result.status is None
+        assert result.locations == []
+        assert result.time_estimate is None
+        assert result.energy is None
+        assert result.importance is None
+        assert result.urgency is None
+
+    def test_move_to_inbox_nonexistent(self, logic: ReviewLogic):
+        result = logic.move_to_inbox("nonexistent")
+        assert result is None
+
+    def test_get_completed_count(self, logic: ReviewLogic, repo: GtdRepository):
+        _create_task(repo, "完了1", status=TaskStatus.DONE.value)
+        _create_task(repo, "完了2", status=TaskStatus.DONE.value)
+        _create_task(repo, "未完了")
+
+        assert logic.get_completed_count() == 2
+
+    def test_get_completed_count_zero(self, logic: ReviewLogic):
+        assert logic.get_completed_count() == 0
+
+    def test_get_project_count(self, logic: ReviewLogic, repo: GtdRepository):
+        _create_task(repo, "PJ1", tag=Tag.PROJECT)
+        _create_task(repo, "PJ2", tag=Tag.PROJECT)
+        _create_task(repo, "タスク")
+
+        assert logic.get_project_count() == 2
+
+    def test_get_project_count_zero(self, logic: ReviewLogic):
+        assert logic.get_project_count() == 0
+
+    def test_decompose_project_success(self, logic: ReviewLogic, repo: GtdRepository):
+        project = _create_task(repo, "大きなプロジェクト", tag=Tag.PROJECT)
+        titles = ["サブタスク1", "サブタスク2", "サブタスク3"]
+
+        result = logic.decompose_project(project.id, titles)
+
+        assert len(result) == 3
+        assert [item.title for item in result] == titles
+        # 元のプロジェクトは削除されている
+        assert repo.get(project.id) is None
+        # 新しいアイテムがリポジトリに存在する
+        assert len(repo.items) == 3
+
+    def test_decompose_project_subtask_properties(
+        self, logic: ReviewLogic, repo: GtdRepository
+    ):
+        project = _create_task(repo, "PJ", tag=Tag.PROJECT)
+        result = logic.decompose_project(project.id, ["タスクA"])
+
+        sub = result[0]
+        assert sub.item_status == ItemStatus.INBOX
+        assert sub.tag is None
+        assert sub.status is None
+        assert sub.importance is None
+        assert sub.urgency is None
+
+    def test_decompose_project_item_not_found(self, logic: ReviewLogic):
+        with pytest.raises(ValueError, match="Item not found"):
+            logic.decompose_project("nonexistent", ["タスク"])
+
+    def test_decompose_project_not_a_project(
+        self, logic: ReviewLogic, repo: GtdRepository
+    ):
+        task = _create_task(repo, "普通のタスク", tag=Tag.TASK)
+        with pytest.raises(ValueError, match="not a project"):
+            logic.decompose_project(task.id, ["タスク"])
+
+    def test_decompose_project_empty_titles(
+        self, logic: ReviewLogic, repo: GtdRepository
+    ):
+        project = _create_task(repo, "PJ", tag=Tag.PROJECT)
+        with pytest.raises(ValueError, match="At least one sub-task"):
+            logic.decompose_project(project.id, [])

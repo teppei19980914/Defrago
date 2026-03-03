@@ -8,9 +8,9 @@
 import logging
 import sys
 from datetime import datetime
-from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Literal
+
 
 # ログディレクトリ
 LOG_DIR = Path(__file__).parent.parent.parent.parent / "logs"
@@ -117,4 +117,6 @@ class LoggerMixin:
     @property
     def logger(self) -> logging.Logger:
         """クラス名をベースにしたロガーを返す。"""
-        return logging.getLogger(self.__class__.__module__ + "." + self.__class__.__name__)
+        return logging.getLogger(
+            self.__class__.__module__ + "." + self.__class__.__name__
+        )
