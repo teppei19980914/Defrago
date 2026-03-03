@@ -9,7 +9,7 @@ import logging
 from collections import defaultdict
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QMouseEvent, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QMouseEvent, QPainter, QPen
 from PySide6.QtWidgets import QToolTip, QWidget
 
 from study_python.gtd.gui.styles import COLORS
@@ -31,6 +31,7 @@ class MatrixView(QWidget):
         super().__init__(parent)
         self._items: list[GtdItem] = []
         self._dot_positions: list[tuple[QPointF, GtdItem]] = []
+        self._hit_areas: list[tuple[QRectF, GtdItem]] = []
         self.setMinimumSize(400, 400)
         self.setMouseTracking(True)
 
@@ -89,10 +90,8 @@ class MatrixView(QWidget):
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """マウスホバーでツールチップを表示する."""
         pos = event.position()
-        for dot_pos, item in self._dot_positions:
-            dx = pos.x() - dot_pos.x()
-            dy = pos.y() - dot_pos.y()
-            if dx * dx + dy * dy <= (_DOT_RADIUS + 4) ** 2:
+        for rect, item in self._hit_areas:
+            if rect.contains(pos):
                 tip = f"{item.title}\n重要度: {item.importance}  緊急度: {item.urgency}"
                 QToolTip.showText(event.globalPosition().toPoint(), tip, self)
                 return
@@ -188,6 +187,9 @@ class MatrixView(QWidget):
 
         font.setPointSize(8)
         painter.setFont(font)
+        fm = QFontMetrics(font)
+
+        self._hit_areas = []
 
         for pos, item in self._dot_positions:
             dot_color = self._get_dot_color(item)
@@ -205,7 +207,20 @@ class MatrixView(QWidget):
             title = item.title
             if len(title) > _LABEL_MAX_CHARS:
                 title = title[: _LABEL_MAX_CHARS - 1] + "…"
+            label_x = int(pos.x()) + 10
+            label_y = int(pos.y()) + 4
             painter.setPen(QColor(COLORS["text_primary"]))
-            painter.drawText(int(pos.x()) + 10, int(pos.y()) + 4, title)
+            painter.drawText(label_x, label_y, title)
+
+            # ヒットエリア（ドット + ラベルを包含する矩形）
+            label_w = fm.horizontalAdvance(title)
+            label_h = fm.height()
+            hit_rect = QRectF(
+                pos.x() - _DOT_RADIUS,
+                pos.y() - max(_DOT_RADIUS, label_h),
+                _DOT_RADIUS + 10 + label_w + 4,
+                max(_DOT_RADIUS * 2, label_h) + _DOT_RADIUS,
+            )
+            self._hit_areas.append((hit_rect, item))
 
         painter.end()
