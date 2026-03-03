@@ -1,0 +1,42 @@
+{
+    "recommendations": [
+        // Python 開発の必須拡張機能
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+
+        // Ruff (Linter & Formatter)
+        "charliermarsh.ruff",
+
+        // テスト
+        "ms-python.pytest-adapter",
+
+        // Git
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+
+        // EditorConfig
+        "editorconfig.editorconfig",
+
+        // TOML サポート
+        "tamasfe.even-better-toml",
+
+        // YAML サポート
+        "redhat.vscode-yaml",
+
+        // Markdown
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+
+        // その他便利な拡張機能
+        "usernamehw.errorlens",
+        "gruntfuggly.todo-tree",
+        "streetsidesoftware.code-spell-checker"
+    ],
+    "unwantedRecommendations": [
+        // Ruffを使用するため、以下は不要
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.flake8",
+        "ms-python.pylint"
+    ]
+}

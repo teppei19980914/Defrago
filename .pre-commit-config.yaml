@@ -1,0 +1,56 @@
+# pre-commit 設定ファイル
+# インストール: uv run pre-commit install
+# 手動実行: uv run pre-commit run --all-files
+
+repos:
+  # 一般的なファイルチェック
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  # Ruff - Linter & Formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      # リンター
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      # フォーマッター
+      - id: ruff-format
+
+  # MyPy - 型チェック
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+        args: [--config-file=pyproject.toml]
+        pass_filenames: false
+        entry: mypy src/
+
+  # コミットメッセージのチェック（Conventional Commits）
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert]
+
+# CI設定
+ci:
+  autofix_commit_msg: "style: auto-fix by pre-commit hooks"
+  autofix_prs: true
+  autoupdate_commit_msg: "chore: update pre-commit hooks"
+  autoupdate_schedule: weekly
