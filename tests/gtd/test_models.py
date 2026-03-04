@@ -179,3 +179,19 @@ class TestGtdItem:
     def test_needs_review_true_for_project(self):
         item = GtdItem(title="テスト", tag=Tag.PROJECT)
         assert item.needs_review() is True
+
+    def test_needs_review_true_for_calendar_registered(self):
+        item = GtdItem(
+            title="テスト",
+            tag=Tag.CALENDAR,
+            status=CalendarStatus.REGISTERED.value,
+        )
+        assert item.needs_review() is True
+
+    def test_needs_review_false_for_calendar_not_started(self):
+        item = GtdItem(
+            title="テスト",
+            tag=Tag.CALENDAR,
+            status=CalendarStatus.NOT_STARTED.value,
+        )
+        assert item.needs_review() is False

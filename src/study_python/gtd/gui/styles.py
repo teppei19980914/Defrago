@@ -64,6 +64,22 @@ QWidget {{
     font-weight: bold;
 }}
 
+#settings_btn {{
+    background-color: transparent;
+    border: 1px solid {COLORS["border"]};
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-align: left;
+    color: {COLORS["text_secondary"]};
+    font-size: 13px;
+    font-weight: normal;
+}}
+
+#settings_btn:hover {{
+    background-color: {COLORS["bg_surface"]};
+    color: {COLORS["text_primary"]};
+}}
+
 /* コンテンツエリア */
 #content_area {{
     background-color: {COLORS["bg_primary"]};

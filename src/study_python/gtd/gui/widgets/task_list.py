@@ -26,6 +26,7 @@ from study_python.gtd.gui.styles import (
 from study_python.gtd.logic.execution import ExecutionLogic
 from study_python.gtd.models import GtdItem, Tag, get_status_enum_for_tag
 from study_python.gtd.repository import GtdRepository
+from study_python.gtd.settings import SettingsManager
 
 
 logger = logging.getLogger(__name__)
@@ -122,11 +123,15 @@ class TaskListWidget(QWidget):
     data_changed = Signal()
 
     def __init__(
-        self, repository: GtdRepository, parent: QWidget | None = None
+        self,
+        repository: GtdRepository,
+        settings_mgr: SettingsManager,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._repo = repository
         self._logic = ExecutionLogic(repository)
+        self._settings_mgr = settings_mgr
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -175,6 +180,7 @@ class TaskListWidget(QWidget):
         """ステータス変更ハンドラ."""
         try:
             self._logic.update_status(item_id, new_status)
+            self.refresh()
             self.data_changed.emit()
         except ValueError as e:
             logger.error(f"Status update failed: {e}")
@@ -184,23 +190,27 @@ class TaskListWidget(QWidget):
         # 既存行をクリア
         while self._list_layout.count() > 1:
             child = self._list_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+            if child and child.widget():
+                child.widget().deleteLater()  # type: ignore[union-attr]
 
         # フィルタ
         filter_val = self._filter_combo.currentData()
-        tasks = self._logic.get_active_tasks()
+
+        # 完了タスク表示設定に応じてタスクを取得
+        if self._settings_mgr.settings.show_done_tasks:
+            tasks = [
+                item
+                for item in self._repo.get_tasks()
+                if item.tag is not None and item.tag != Tag.PROJECT
+            ]
+        else:
+            tasks = self._logic.get_active_tasks()
 
         if filter_val != "all":
             tasks = [t for t in tasks if t.tag and t.tag.value == filter_val]
 
-        # 優先度順ソート（重要度×緊急度 降順）
-        def sort_key(item: GtdItem) -> tuple[int, int]:
-            imp = item.importance or 0
-            urg = item.urgency or 0
-            return (-imp, -urg)
-
-        tasks.sort(key=sort_key)
+        # 設定に基づくソート
+        tasks = self._settings_mgr.sort_items(tasks)
 
         self._count_label.setText(f"{len(tasks)} 件のタスク")
 

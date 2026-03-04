@@ -8,6 +8,7 @@ from pytestqt.qtbot import QtBot
 from study_python.gtd.gui.main_window import MainWindow
 from study_python.gtd.models import GtdItem, ItemStatus, Tag, TaskStatus
 from study_python.gtd.repository import GtdRepository
+from study_python.gtd.settings import SettingsManager
 
 
 @pytest.fixture
@@ -16,8 +17,15 @@ def repo(tmp_path: Path) -> GtdRepository:
 
 
 @pytest.fixture
-def window(qtbot: QtBot, repo: GtdRepository) -> MainWindow:
-    w = MainWindow(repo)
+def settings_mgr(tmp_path: Path) -> SettingsManager:
+    return SettingsManager(settings_path=tmp_path / "test_settings.json")
+
+
+@pytest.fixture
+def window(
+    qtbot: QtBot, repo: GtdRepository, settings_mgr: SettingsManager
+) -> MainWindow:
+    w = MainWindow(repo, settings_mgr)
     qtbot.addWidget(w)
     return w
 

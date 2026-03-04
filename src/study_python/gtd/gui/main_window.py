@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from study_python.gtd.gui.components.dialogs import SettingsDialog
 from study_python.gtd.gui.styles import COLORS, MAIN_STYLESHEET
 from study_python.gtd.gui.widgets.clarification import ClarificationWidget
 from study_python.gtd.gui.widgets.dashboard import DashboardWidget
@@ -28,6 +29,7 @@ from study_python.gtd.gui.widgets.review import ReviewWidget
 from study_python.gtd.gui.widgets.task_list import TaskListWidget
 from study_python.gtd.models import ItemStatus
 from study_python.gtd.repository import GtdRepository
+from study_python.gtd.settings import SettingsManager
 
 
 logger = logging.getLogger(__name__)
@@ -36,9 +38,12 @@ logger = logging.getLogger(__name__)
 class MainWindow(QMainWindow):
     """MindFlowメインウィンドウ."""
 
-    def __init__(self, repository: GtdRepository) -> None:
+    def __init__(
+        self, repository: GtdRepository, settings_mgr: SettingsManager
+    ) -> None:
         super().__init__()
         self._repo = repository
+        self._settings_mgr = settings_mgr
         self.setWindowTitle("MindFlow - GTD Task Manager")
         self.setMinimumSize(1100, 700)
         self.resize(1280, 800)
@@ -102,6 +107,12 @@ class MainWindow(QMainWindow):
 
         sidebar_layout.addStretch()
 
+        # 設定ボタン（サイドバー下部）
+        self._settings_btn = QPushButton("⚙ 設定")
+        self._settings_btn.setObjectName("settings_btn")
+        self._settings_btn.clicked.connect(self._on_settings)
+        sidebar_layout.addWidget(self._settings_btn)
+
         main_layout.addWidget(sidebar)
 
         # コンテンツエリア（スタック）
@@ -113,7 +124,7 @@ class MainWindow(QMainWindow):
         self._inbox = InboxWidget(self._repo)
         self._clarification = ClarificationWidget(self._repo)
         self._organization = OrganizationWidget(self._repo)
-        self._task_list = TaskListWidget(self._repo)
+        self._task_list = TaskListWidget(self._repo, self._settings_mgr)
         self._review = ReviewWidget(self._repo)
 
         self._stack.addWidget(self._dashboard)
@@ -161,7 +172,7 @@ class MainWindow(QMainWindow):
         """現在のページを更新する."""
         current = self._stack.currentWidget()
         if hasattr(current, "refresh"):
-            current.refresh()  # type: ignore[union-attr]
+            current.refresh()
 
     def _on_data_changed(self) -> None:
         """データ変更時のハンドラ."""
@@ -224,3 +235,9 @@ class MainWindow(QMainWindow):
         self._status_bar.showMessage(
             f"  Total: {total}  |  Tasks: {tasks}  |  Done: {done}"
         )
+
+    def _on_settings(self) -> None:
+        """設定ボタンのハンドラ."""
+        dlg = SettingsDialog(self._repo.data_path, self._settings_mgr, parent=self)
+        if dlg.exec():
+            self._refresh_current_page()

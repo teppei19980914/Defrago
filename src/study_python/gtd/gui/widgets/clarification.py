@@ -96,6 +96,14 @@ class ClarificationWidget(QWidget):
         self._btn_layout = QHBoxLayout()
         self._btn_layout.setSpacing(12)
 
+        self._back_btn = QPushButton("\u2190")
+        self._back_btn.setFixedWidth(40)
+        self._back_btn.setProperty("secondary", True)
+        self._back_btn.setToolTip("前の質問に戻る")
+        self._back_btn.clicked.connect(self._on_back)
+        self._back_btn.setVisible(False)
+        self._btn_layout.addWidget(self._back_btn)
+
         self._yes_btn = QPushButton("はい")
         self._yes_btn.setFixedWidth(120)
         self._yes_btn.clicked.connect(self._on_yes)
@@ -204,6 +212,7 @@ class ClarificationWidget(QWidget):
             self._item_display.setText("")
             self._question_label.setText("")
             self._set_buttons_visible(False)
+            self._back_btn.setVisible(False)
             self._empty_label.setVisible(True)
             self._progress_label.setText("")
 
@@ -226,6 +235,7 @@ class ClarificationWidget(QWidget):
         ]
         if self._step < len(questions):
             self._question_label.setText(questions[self._step])
+        self._back_btn.setVisible(self._step > 0)
 
     def _set_buttons_visible(self, visible: bool) -> None:
         """Yes/Noボタンの表示を切り替える."""
@@ -278,8 +288,23 @@ class ClarificationWidget(QWidget):
         elif self._step == 3:
             # 数分では無理 → タスク（Context入力が必要）
             self._set_buttons_visible(False)
+            self._back_btn.setVisible(True)
             self._question_label.setText("タスクのContextを設定してください:")
             self._context_widget.setVisible(True)
+
+    def _on_back(self) -> None:
+        """「←」戻るボタンのハンドラ."""
+        if self._context_widget.isVisible():
+            # Context入力フォーム表示中 → Step 3 に戻る
+            self._context_widget.setVisible(False)
+            self._validation_error.setVisible(False)
+            self._set_buttons_visible(True)
+            self._show_step()
+            return
+
+        if self._step > 0:
+            self._step -= 1
+            self._show_step()
 
     def _reset_context_defaults(self) -> None:
         """Context入力フォームをデフォルト値にリセットする."""
@@ -371,5 +396,6 @@ class ClarificationWidget(QWidget):
             self._item_display.setText("")
             self._question_label.setText("")
             self._set_buttons_visible(False)
+            self._back_btn.setVisible(False)
             self._empty_label.setVisible(True)
             self._progress_label.setText("")

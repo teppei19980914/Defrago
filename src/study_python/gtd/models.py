@@ -185,4 +185,8 @@ class GtdItem:
 
     def needs_review(self) -> bool:
         """見直し対象かを返す."""
-        return self.is_done() or self.tag == Tag.PROJECT
+        if self.is_done() or self.tag == Tag.PROJECT:
+            return True
+        return (
+            self.tag == Tag.CALENDAR and self.status == CalendarStatus.REGISTERED.value
+        )
