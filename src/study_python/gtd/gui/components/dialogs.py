@@ -208,6 +208,7 @@ class DecomposeProjectDialog(QDialog):
 
         # 行追加ボタン
         self._add_row_btn = QPushButton("＋ 行を追加")
+        self._add_row_btn.setAutoDefault(False)
         self._add_row_btn.setProperty("secondary", True)
         self._add_row_btn.clicked.connect(self._add_row)
         layout.addWidget(self._add_row_btn)
@@ -217,11 +218,13 @@ class DecomposeProjectDialog(QDialog):
         btn_layout.addStretch()
 
         cancel_btn = QPushButton("キャンセル")
+        cancel_btn.setAutoDefault(False)
         cancel_btn.setProperty("secondary", True)
         cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(cancel_btn)
 
         self._confirm_btn = QPushButton("細分化して登録")
+        self._confirm_btn.setAutoDefault(False)
         self._confirm_btn.clicked.connect(self._on_confirm)
         btn_layout.addWidget(self._confirm_btn)
 
@@ -249,6 +252,7 @@ class DecomposeProjectDialog(QDialog):
 
         remove_btn = QPushButton("× 削除")
         remove_btn.setFixedWidth(70)
+        remove_btn.setAutoDefault(False)
         remove_btn.setProperty("danger", True)
         remove_btn.clicked.connect(lambda: self._remove_row(row_widget, edit))
         row_layout.addWidget(remove_btn)

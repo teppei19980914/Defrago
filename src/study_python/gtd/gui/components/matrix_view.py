@@ -168,19 +168,76 @@ class MatrixView(QWidget):
         )
         painter.restore()
 
-        # 象限ラベル
-        font.setPointSize(9)
-        painter.setFont(font)
-        painter.setPen(QColor(COLORS["text_muted"]))
-
-        labels = [
-            (_MARGIN + 8, _MARGIN + 8, "Q2: 重要・非緊急"),
-            (_MARGIN + half_w + 8, _MARGIN + 8, "Q1: 重要・緊急"),
-            (_MARGIN + 8, _MARGIN + half_h + 8, "Q4: 非重要・非緊急"),
-            (_MARGIN + half_w + 8, _MARGIN + half_h + 8, "Q3: 非重要・緊急"),
+        # 象限ラベル（領域名 + 説明ガイド）
+        _pad = 8
+        quadrant_guides = [
+            (
+                _MARGIN + _pad,
+                _MARGIN + _pad,
+                half_w - _pad * 2,
+                half_h - _pad * 2,
+                COLORS["q2_color"],
+                "Q2: 効果性の領域",
+                "最も注力すべき。緊急でないため後回しに"
+                "しがちだが、長期的な成長につながる",
+            ),
+            (
+                _MARGIN + half_w + _pad,
+                _MARGIN + _pad,
+                half_w - _pad * 2,
+                half_h - _pad * 2,
+                COLORS["q1_color"],
+                "Q1: 必須の領域",
+                "最優先で取り組む必要があるが、常にここに追われると燃え尽きの原因に",
+            ),
+            (
+                _MARGIN + _pad,
+                _MARGIN + half_h + _pad,
+                half_w - _pad * 2,
+                half_h - _pad * 2,
+                COLORS["q4_color"],
+                "Q4: 浪費/過剰の領域",
+                "成果につながりにくい。リフレッシュならOKだが時間浪費に注意",
+            ),
+            (
+                _MARGIN + half_w + _pad,
+                _MARGIN + half_h + _pad,
+                half_w - _pad * 2,
+                half_h - _pad * 2,
+                COLORS["q3_color"],
+                "Q3: 錯覚の領域",
+                "緊急だが自身の目標に関係ないことも多い。委任・断る選択も重要",
+            ),
         ]
-        for lx, ly, text in labels:
-            painter.drawText(int(lx), int(ly + 14), text)
+
+        for gx, gy, gw, gh, color, title, desc in quadrant_guides:
+            # 領域名（9pt・象限色）
+            font.setPointSize(9)
+            painter.setFont(font)
+            painter.setPen(QColor(color))
+            title_rect = QRectF(gx, gy, gw, 20)
+            painter.drawText(
+                title_rect,
+                int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop),
+                title,
+            )
+
+            # 説明文（8pt・muted色・ワードラップ）
+            font.setPointSize(8)
+            painter.setFont(font)
+            muted = QColor(COLORS["text_muted"])
+            muted.setAlpha(180)
+            painter.setPen(muted)
+            desc_rect = QRectF(gx, gy + 20, gw, gh - 20)
+            painter.drawText(
+                desc_rect,
+                int(
+                    Qt.AlignmentFlag.AlignLeft
+                    | Qt.AlignmentFlag.AlignTop
+                    | Qt.TextFlag.TextWordWrap
+                ),
+                desc,
+            )
 
         # アイテムのドット描画（オフセット済み座標を使用）
         self._calc_dot_positions(plot_w, plot_h)

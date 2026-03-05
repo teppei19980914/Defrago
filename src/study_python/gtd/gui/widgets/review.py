@@ -15,10 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from study_python.gtd.gui.components.dialogs import (
-    ConfirmDialog,
-    DecomposeProjectDialog,
-)
+from study_python.gtd.gui.components.dialogs import DecomposeProjectDialog
 from study_python.gtd.gui.components.item_card import ItemCard
 from study_python.gtd.logic.review import ReviewLogic
 from study_python.gtd.models import Tag
@@ -84,16 +81,9 @@ class ReviewWidget(QWidget):
     def _on_card_action(self, item_id: str, action: str) -> None:
         """カードアクションハンドラ."""
         if action == "delete":
-            dlg = ConfirmDialog(
-                "削除確認",
-                "このアイテムを完全に削除しますか？",
-                confirm_text="削除",
-                parent=self,
-            )
-            if dlg.exec():
-                self._logic.delete_item(item_id)
-                self.refresh()
-                self.data_changed.emit()
+            self._logic.delete_item(item_id)
+            self.refresh()
+            self.data_changed.emit()
         elif action == "to_inbox":
             self._logic.move_to_inbox(item_id)
             self.refresh()
