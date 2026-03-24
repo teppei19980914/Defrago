@@ -6,7 +6,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 COPY . .
 
-RUN uv sync --no-dev --extra web
+RUN uv sync --no-dev
 
 EXPOSE 8000
 
