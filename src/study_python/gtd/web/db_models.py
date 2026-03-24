@@ -38,4 +38,4 @@ class GtdItemRow(Base):
     # プロジェクト分解
     parent_project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     parent_project_title: Mapped[str] = mapped_column(String(500), default="")
-    order: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    order: Mapped[int | None] = mapped_column("item_order", Integer, nullable=True)

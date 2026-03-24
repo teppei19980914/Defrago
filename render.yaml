@@ -11,8 +11,4 @@ services:
       - key: ADMIN_PASSWORD_HASH
         sync: false
       - key: DATABASE_URL
-        value: sqlite:////opt/render/project/data/mindflow.db
-    disk:
-      name: mindflow-data
-      mountPath: /opt/render/project/data
-      sizeGB: 1
+        sync: false
