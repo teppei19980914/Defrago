@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+    <h2 class="page-title">収集 - Inbox</h2>
+    <p class="page-desc">気になることをすべて書き出しましょう</p>
+
+    <form hx-post="/inbox/add" hx-target="#item-list" hx-swap="innerHTML"
+          class="input-row" _="on htmx:afterRequest reset() me then focus() on me.querySelector('input')">
+        <input type="text" name="title" placeholder="気になることを入力して Enter..." class="text-input" autocomplete="off">
+        <button type="submit" class="btn-primary">追加</button>
+    </form>
+
+    <div id="item-list">
+        {% include "partials/item_list.html" %}
+    </div>
+</div>
+{% endblock %}

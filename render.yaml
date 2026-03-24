@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: mindflow-gtd
+    runtime: docker
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:////opt/render/project/data/mindflow.db
+    disk:
+      name: mindflow-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1

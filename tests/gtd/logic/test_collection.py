@@ -1,28 +1,21 @@
 """収集ロジックのテスト."""
 
-from pathlib import Path
-
 import pytest
 
 from study_python.gtd.logic.collection import CollectionLogic
-from study_python.gtd.models import ItemStatus
-from study_python.gtd.repository import GtdRepository
+from study_python.gtd.models import GtdItem, ItemStatus
+from study_python.gtd.web.db_repository import DbGtdRepository
 
 
 @pytest.fixture
-def repo(tmp_path: Path) -> GtdRepository:
-    return GtdRepository(data_path=tmp_path / "test.json")
-
-
-@pytest.fixture
-def logic(repo: GtdRepository) -> CollectionLogic:
+def logic(repo: DbGtdRepository) -> CollectionLogic:
     return CollectionLogic(repo)
 
 
 class TestCollectionLogic:
     """CollectionLogicのテスト."""
 
-    def test_add_to_inbox(self, logic: CollectionLogic, repo: GtdRepository):
+    def test_add_to_inbox(self, logic: CollectionLogic, repo: DbGtdRepository):
         item = logic.add_to_inbox("新しいアイテム")
         assert item.title == "新しいアイテム"
         assert item.item_status == ItemStatus.INBOX
@@ -45,7 +38,7 @@ class TestCollectionLogic:
         with pytest.raises(ValueError, match="タイトルは必須です"):
             logic.add_to_inbox("   ")
 
-    def test_delete_item(self, logic: CollectionLogic, repo: GtdRepository):
+    def test_delete_item(self, logic: CollectionLogic, repo: DbGtdRepository):
         item = logic.add_to_inbox("削除対象")
         result = logic.delete_item(item.id)
         assert result is not None
@@ -100,3 +93,72 @@ class TestCollectionLogic:
         ref_items = logic.get_reference_items()
         assert len(ref_items) == 1
         assert ref_items[0].title == "参考"
+
+
+class TestReorderItem:
+    """reorder_itemのテスト."""
+
+    def _create_project_items(
+        self, repo: DbGtdRepository, project_id: str = "proj-1"
+    ) -> list[GtdItem]:
+        items = []
+        for i, title in enumerate(["A", "B", "C"]):
+            item = GtdItem(
+                title=title,
+                parent_project_id=project_id,
+                parent_project_title="PJ",
+                order=i,
+            )
+            repo.add(item)
+            items.append(item)
+        return items
+
+    def test_reorder_up(self, logic: CollectionLogic, repo: DbGtdRepository):
+        items = self._create_project_items(repo)
+        result = logic.reorder_item(items[1].id, "up")
+        assert result is True
+        assert items[1].order == 0
+        assert items[0].order == 1
+
+    def test_reorder_down(self, logic: CollectionLogic, repo: DbGtdRepository):
+        items = self._create_project_items(repo)
+        result = logic.reorder_item(items[0].id, "down")
+        assert result is True
+        assert items[0].order == 1
+        assert items[1].order == 0
+
+    def test_reorder_up_first_item_fails(
+        self, logic: CollectionLogic, repo: DbGtdRepository
+    ):
+        items = self._create_project_items(repo)
+        result = logic.reorder_item(items[0].id, "up")
+        assert result is False
+
+    def test_reorder_down_last_item_fails(
+        self, logic: CollectionLogic, repo: DbGtdRepository
+    ):
+        items = self._create_project_items(repo)
+        result = logic.reorder_item(items[2].id, "down")
+        assert result is False
+
+    def test_reorder_no_parent_project(
+        self, logic: CollectionLogic, repo: DbGtdRepository
+    ):
+        item = GtdItem(title="通常")
+        repo.add(item)
+        result = logic.reorder_item(item.id, "up")
+        assert result is False
+
+    def test_reorder_nonexistent(self, logic: CollectionLogic):
+        result = logic.reorder_item("nonexistent", "up")
+        assert result is False
+
+    def test_reorder_different_projects_independent(
+        self, logic: CollectionLogic, repo: DbGtdRepository
+    ):
+        self._create_project_items(repo, "proj-1")
+        items_b = self._create_project_items(repo, "proj-2")
+        result = logic.reorder_item(items_b[1].id, "up")
+        assert result is True
+        assert items_b[1].order == 0
+        assert items_b[0].order == 1

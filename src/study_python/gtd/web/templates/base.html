@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindFlow GTD</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body hx-boost="true">
+    <div class="app-layout">
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">MindFlow</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-btn {% if active_page == '/' %}active{% endif %}">ダッシュボード</a>
+                <a href="/inbox" class="nav-btn {% if active_page == '/inbox' %}active{% endif %}">収集</a>
+                <a href="/clarification" class="nav-btn {% if active_page == '/clarification' %}active{% endif %}">明確化</a>
+                <a href="/organization" class="nav-btn {% if active_page == '/organization' %}active{% endif %}">整理</a>
+                <a href="/execution" class="nav-btn {% if active_page == '/execution' %}active{% endif %}">実行</a>
+                <a href="/review" class="nav-btn {% if active_page == '/review' %}active{% endif %}">見直し</a>
+            </div>
+            <div class="sidebar-footer">
+                <a href="/settings" class="nav-btn nav-btn-sub {% if active_page == '/settings' %}active{% endif %}">&#9881; 設定</a>
+                <a href="/logout" class="nav-btn nav-btn-sub">ログアウト</a>
+            </div>
+        </nav>
+
+        <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

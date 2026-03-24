@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+    <h2 class="page-title">整理</h2>
+    <p class="page-desc">タスクに重要度と緊急度を設定しましょう</p>
+    <div id="organization-area">
+        {% include "partials/organization_form.html" %}
+    </div>
+</div>
+{% endblock %}

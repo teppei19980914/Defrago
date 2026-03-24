@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 
 from study_python.gtd.models import GtdItem, ItemStatus
-from study_python.gtd.repository import GtdRepository
+from study_python.gtd.repository_protocol import GtdRepositoryProtocol
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class CollectionLogic:
         repository: GTDアイテムリポジトリ。
     """
 
-    def __init__(self, repository: GtdRepository) -> None:
+    def __init__(self, repository: GtdRepositoryProtocol) -> None:
         self._repo = repository
 
     def add_to_inbox(self, title: str, note: str = "") -> GtdItem:
@@ -120,3 +120,42 @@ class CollectionLogic:
             Referenceステータスのアイテムのリスト。
         """
         return self._repo.get_by_status(ItemStatus.REFERENCE)
+
+    def reorder_item(self, item_id: str, direction: str) -> bool:
+        """同一プロジェクト内でアイテムの順序を上下に移動する.
+
+        Args:
+            item_id: 移動するアイテムのID。
+            direction: "up" または "down"。
+
+        Returns:
+            順序変更が成功した場合True。
+        """
+        item = self._repo.get(item_id)
+        if item is None or item.parent_project_id is None or item.order is None:
+            return False
+
+        siblings = sorted(
+            [
+                i
+                for i in self._repo.items
+                if i.parent_project_id == item.parent_project_id and i.order is not None
+            ],
+            key=lambda i: i.order,  # type: ignore[arg-type]
+        )
+
+        idx = next((j for j, s in enumerate(siblings) if s.id == item.id), -1)
+        if idx < 0:
+            return False
+
+        if direction == "up" and idx > 0:
+            swap_target = siblings[idx - 1]
+        elif direction == "down" and idx < len(siblings) - 1:
+            swap_target = siblings[idx + 1]
+        else:
+            return False
+
+        item.order, swap_target.order = swap_target.order, item.order
+        item.touch()
+        swap_target.touch()
+        return True

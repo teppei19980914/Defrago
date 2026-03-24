@@ -1,0 +1,50 @@
+{% for item in items %}
+<div class="item-card">
+    <div class="card-header">
+        <span class="card-title">{{ item.title }}</span>
+        {% if item.tag %}
+        <span class="tag-badge tag-{{ item.tag.value }}">
+            {{ {"delegation": "依頼", "calendar": "カレンダー", "project": "プロジェクト", "do_now": "即実行", "task": "タスク"}.get(item.tag.value, item.tag.value) }}
+        </span>
+        {% endif %}
+        {% if item.parent_project_title %}
+        <span class="project-badge">[{{ item.parent_project_title }}{% if item.order is not none %} #{{ item.order + 1 }}{% endif %}]</span>
+        {% endif %}
+    </div>
+    {% if item.importance is not none and item.urgency is not none %}
+    <div class="card-scores">重要度: {{ item.importance }}  緊急度: {{ item.urgency }}</div>
+    {% endif %}
+    {% if item.note %}
+    <div class="card-note">{{ item.note }}</div>
+    {% endif %}
+    {% if actions_map and item.id in actions_map %}
+    <div class="card-actions">
+        {% for action_url, action_label, is_danger in actions_map[item.id] %}
+        <button hx-post="{{ action_url }}" hx-target="#item-list" hx-swap="innerHTML"
+                class="btn-sm {% if is_danger %}btn-danger{% else %}btn-secondary{% endif %}">
+            {{ action_label }}
+        </button>
+        {% endfor %}
+    </div>
+    {% elif page == "review" %}
+    <div class="card-actions">
+        {% if item.tag and item.tag.value == "project" %}
+        <form hx-post="/review/{{ item.id }}/decompose" hx-target="#item-list" hx-swap="innerHTML" class="decompose-form">
+            <textarea name="titles" placeholder="サブタスクを1行1つずつ入力..." rows="3" class="text-input text-area-sm"></textarea>
+            <button type="submit" class="btn-sm btn-secondary">細分化</button>
+        </form>
+        <button hx-post="/review/{{ item.id }}/delete" hx-target="#item-list" hx-swap="innerHTML"
+                class="btn-sm btn-danger">削除</button>
+        {% else %}
+        <button hx-post="/review/{{ item.id }}/to_inbox" hx-target="#item-list" hx-swap="innerHTML"
+                class="btn-sm btn-secondary">Inboxに戻す</button>
+        <button hx-post="/review/{{ item.id }}/delete" hx-target="#item-list" hx-swap="innerHTML"
+                class="btn-sm btn-danger">削除</button>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+{% if not items %}
+<p class="empty-msg">アイテムはありません</p>
+{% endif %}

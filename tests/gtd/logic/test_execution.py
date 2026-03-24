@@ -1,7 +1,5 @@
 """実行ロジックのテスト."""
 
-from pathlib import Path
-
 import pytest
 
 from study_python.gtd.logic.execution import ExecutionLogic
@@ -13,21 +11,16 @@ from study_python.gtd.models import (
     Tag,
     TaskStatus,
 )
-from study_python.gtd.repository import GtdRepository
+from study_python.gtd.web.db_repository import DbGtdRepository
 
 
 @pytest.fixture
-def repo(tmp_path: Path) -> GtdRepository:
-    return GtdRepository(data_path=tmp_path / "test.json")
-
-
-@pytest.fixture
-def logic(repo: GtdRepository) -> ExecutionLogic:
+def logic(repo: DbGtdRepository) -> ExecutionLogic:
     return ExecutionLogic(repo)
 
 
 def _create_task(
-    repo: GtdRepository,
+    repo: DbGtdRepository,
     title: str = "テスト",
     tag: Tag = Tag.TASK,
     status: str | None = None,
@@ -48,7 +41,7 @@ def _create_task(
 class TestExecutionLogic:
     """ExecutionLogicのテスト."""
 
-    def test_get_active_tasks(self, logic: ExecutionLogic, repo: GtdRepository):
+    def test_get_active_tasks(self, logic: ExecutionLogic, repo: DbGtdRepository):
         _create_task(repo, "未着手")
         _create_task(repo, "完了", status=TaskStatus.DONE.value)
         _create_task(repo, "プロジェクト", tag=Tag.PROJECT)
@@ -58,7 +51,7 @@ class TestExecutionLogic:
         assert active[0].title == "未着手"
 
     def test_get_active_tasks_includes_multiple_tags(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         _create_task(repo, "タスク", tag=Tag.TASK)
         _create_task(repo, "依頼", tag=Tag.DELEGATION)
@@ -68,32 +61,34 @@ class TestExecutionLogic:
         active = logic.get_active_tasks()
         assert len(active) == 4
 
-    def test_update_status_task(self, logic: ExecutionLogic, repo: GtdRepository):
+    def test_update_status_task(self, logic: ExecutionLogic, repo: DbGtdRepository):
         item = _create_task(repo)
         result = logic.update_status(item.id, TaskStatus.IN_PROGRESS.value)
         assert result is not None
         assert result.status == TaskStatus.IN_PROGRESS.value
 
-    def test_update_status_to_done(self, logic: ExecutionLogic, repo: GtdRepository):
+    def test_update_status_to_done(self, logic: ExecutionLogic, repo: DbGtdRepository):
         item = _create_task(repo)
         result = logic.update_status(item.id, TaskStatus.DONE.value)
         assert result is not None
         assert result.status == TaskStatus.DONE.value
 
-    def test_update_status_delegation(self, logic: ExecutionLogic, repo: GtdRepository):
+    def test_update_status_delegation(
+        self, logic: ExecutionLogic, repo: DbGtdRepository
+    ):
         item = _create_task(repo, tag=Tag.DELEGATION)
         result = logic.update_status(item.id, DelegationStatus.WAITING.value)
         assert result is not None
         assert result.status == DelegationStatus.WAITING.value
 
-    def test_update_status_do_now(self, logic: ExecutionLogic, repo: GtdRepository):
+    def test_update_status_do_now(self, logic: ExecutionLogic, repo: DbGtdRepository):
         item = _create_task(repo, tag=Tag.DO_NOW)
         result = logic.update_status(item.id, DoNowStatus.DONE.value)
         assert result is not None
         assert result.status == DoNowStatus.DONE.value
 
     def test_update_status_invalid_value(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         item = _create_task(repo)
         with pytest.raises(ValueError, match="無効なステータスです"):
@@ -103,13 +98,15 @@ class TestExecutionLogic:
         result = logic.update_status("nonexistent", TaskStatus.DONE.value)
         assert result is None
 
-    def test_update_status_on_project(self, logic: ExecutionLogic, repo: GtdRepository):
+    def test_update_status_on_project(
+        self, logic: ExecutionLogic, repo: DbGtdRepository
+    ):
         item = _create_task(repo, tag=Tag.PROJECT)
         result = logic.update_status(item.id, "done")
         assert result is None
 
     def test_update_status_on_non_task(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         item = GtdItem(title="未タスク")
         repo.add(item)
@@ -117,7 +114,7 @@ class TestExecutionLogic:
         assert result is None
 
     def test_get_available_statuses_task(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         item = _create_task(repo, tag=Tag.TASK)
         statuses = logic.get_available_statuses(item.id)
@@ -127,7 +124,7 @@ class TestExecutionLogic:
         assert "done" in statuses
 
     def test_get_available_statuses_delegation(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         item = _create_task(repo, tag=Tag.DELEGATION)
         statuses = logic.get_available_statuses(item.id)
@@ -141,16 +138,59 @@ class TestExecutionLogic:
         assert statuses is None
 
     def test_get_available_statuses_project(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         item = _create_task(repo, tag=Tag.PROJECT)
         statuses = logic.get_available_statuses(item.id)
         assert statuses is None
 
     def test_get_available_statuses_non_task(
-        self, logic: ExecutionLogic, repo: GtdRepository
+        self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         item = GtdItem(title="未タスク")
         repo.add(item)
         statuses = logic.get_available_statuses(item.id)
         assert statuses is None
+
+
+class TestReorderItem:
+    """reorder_itemのテスト."""
+
+    def _create_project_items(
+        self, repo: DbGtdRepository, project_id: str = "proj-1"
+    ) -> list[GtdItem]:
+        items = []
+        for i, title in enumerate(["A", "B", "C"]):
+            item = GtdItem(
+                title=title,
+                tag=Tag.TASK,
+                status=TaskStatus.NOT_STARTED.value,
+                parent_project_id=project_id,
+                parent_project_title="PJ",
+                order=i,
+            )
+            repo.add(item)
+            items.append(item)
+        return items
+
+    def test_reorder_up(self, logic: ExecutionLogic, repo: DbGtdRepository):
+        items = self._create_project_items(repo)
+        result = logic.reorder_item(items[1].id, "up")
+        assert result is True
+        assert items[1].order == 0
+        assert items[0].order == 1
+
+    def test_reorder_down(self, logic: ExecutionLogic, repo: DbGtdRepository):
+        items = self._create_project_items(repo)
+        result = logic.reorder_item(items[0].id, "down")
+        assert result is True
+        assert items[0].order == 1
+        assert items[1].order == 0
+
+    def test_reorder_no_parent_project(
+        self, logic: ExecutionLogic, repo: DbGtdRepository
+    ):
+        item = GtdItem(title="通常", tag=Tag.TASK, status=TaskStatus.NOT_STARTED.value)
+        repo.add(item)
+        result = logic.reorder_item(item.id, "up")
+        assert result is False

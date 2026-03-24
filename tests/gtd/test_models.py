@@ -195,3 +195,20 @@ class TestGtdItem:
             status=CalendarStatus.NOT_STARTED.value,
         )
         assert item.needs_review() is False
+
+    def test_default_parent_project_fields(self):
+        item = GtdItem(title="テスト")
+        assert item.parent_project_id is None
+        assert item.parent_project_title == ""
+        assert item.order is None
+
+    def test_parent_project_fields_set(self):
+        item = GtdItem(
+            title="サブタスク",
+            parent_project_id="proj-123",
+            parent_project_title="大きなPJ",
+            order=2,
+        )
+        assert item.parent_project_id == "proj-123"
+        assert item.parent_project_title == "大きなPJ"
+        assert item.order == 2

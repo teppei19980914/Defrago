@@ -1,0 +1,42 @@
+{% if current %}
+<p class="muted-text">{{ total }} 件の未整理タスク</p>
+<div class="item-display">{{ current.title }}</div>
+<form hx-post="/organization/set_scores" hx-target="#organization-area" hx-swap="innerHTML">
+    <input type="hidden" name="item_id" value="{{ current.id }}">
+    <div class="slider-group">
+        <label class="form-label">重要度: <span id="imp-val">5</span></label>
+        <input type="range" name="importance" min="1" max="10" value="5"
+               class="slider" oninput="document.getElementById('imp-val').textContent=this.value">
+    </div>
+    <div class="slider-group">
+        <label class="form-label">緊急度: <span id="urg-val">5</span></label>
+        <input type="range" name="urgency" min="1" max="10" value="5"
+               class="slider" oninput="document.getElementById('urg-val').textContent=this.value">
+    </div>
+    <button type="submit" class="btn-primary">設定</button>
+</form>
+{% else %}
+<p class="empty-msg">整理するタスクはありません</p>
+{% endif %}
+
+{% if quadrants %}
+<h3 class="section-title" style="margin-top: 24px;">マトリクス</h3>
+<div class="matrix-grid">
+    <div class="matrix-cell q2">
+        <div class="matrix-label">Q2: 効果性</div>
+        {% for item in quadrants.q2 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+    </div>
+    <div class="matrix-cell q1">
+        <div class="matrix-label">Q1: 必須</div>
+        {% for item in quadrants.q1 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+    </div>
+    <div class="matrix-cell q4">
+        <div class="matrix-label">Q4: 浪費</div>
+        {% for item in quadrants.q4 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+    </div>
+    <div class="matrix-cell q3">
+        <div class="matrix-label">Q3: 錯覚</div>
+        {% for item in quadrants.q3 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+    </div>
+</div>
+{% endif %}

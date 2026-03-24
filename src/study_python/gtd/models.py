@@ -132,6 +132,9 @@ class GtdItem:
         energy: 必要なエネルギーレベル（タグがTASKの場合のみ）。
         importance: 重要度（1-10、タグがPROJECT以外の場合）。
         urgency: 緊急度（1-10、タグがPROJECT以外の場合）。
+        parent_project_id: 分解元プロジェクトのID。
+        parent_project_title: 分解元プロジェクトのタイトル。
+        order: プロジェクト内の順序（0始まり）。
         note: メモ。
     """
 
@@ -155,6 +158,11 @@ class GtdItem:
     # 整理フェーズ（tag!=PROJECTの場合のみ）
     importance: int | None = None
     urgency: int | None = None
+
+    # プロジェクト分解時の親情報
+    parent_project_id: str | None = None
+    parent_project_title: str = ""
+    order: int | None = None
 
     # メモ
     note: str = ""

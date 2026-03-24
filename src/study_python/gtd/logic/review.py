@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 
 from study_python.gtd.models import GtdItem, ItemStatus, Tag
-from study_python.gtd.repository import GtdRepository
+from study_python.gtd.repository_protocol import GtdRepositoryProtocol
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class ReviewLogic:
         repository: GTDアイテムリポジトリ。
     """
 
-    def __init__(self, repository: GtdRepository) -> None:
+    def __init__(self, repository: GtdRepositoryProtocol) -> None:
         self._repo = repository
 
     def get_review_items(self) -> list[GtdItem]:
@@ -73,6 +73,9 @@ class ReviewLogic:
         item.energy = None
         item.importance = None
         item.urgency = None
+        item.parent_project_id = None
+        item.parent_project_title = ""
+        item.order = None
         item.touch()
 
         logger.info(f"Moved back to inbox: '{item.title}' (id={item.id})")
@@ -115,9 +118,16 @@ class ReviewLogic:
             msg = "At least one sub-task title is required"
             raise ValueError(msg)
 
+        project_title = item.title
         new_items: list[GtdItem] = []
-        for title in sub_task_titles:
-            new_item = GtdItem(title=title, item_status=ItemStatus.INBOX)
+        for idx, title in enumerate(sub_task_titles):
+            new_item = GtdItem(
+                title=title,
+                item_status=ItemStatus.INBOX,
+                parent_project_id=item_id,
+                parent_project_title=project_title,
+                order=idx,
+            )
             self._repo.add(new_item)
             new_items.append(new_item)
 

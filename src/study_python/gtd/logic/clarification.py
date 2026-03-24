@@ -19,7 +19,7 @@ from study_python.gtd.models import (
     TaskStatus,
     TimeEstimate,
 )
-from study_python.gtd.repository import GtdRepository
+from study_python.gtd.repository_protocol import GtdRepositoryProtocol
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class ClarificationLogic:
         repository: GTDアイテムリポジトリ。
     """
 
-    def __init__(self, repository: GtdRepository) -> None:
+    def __init__(self, repository: GtdRepositoryProtocol) -> None:
         self._repo = repository
 
     def get_pending_items(self) -> list[GtdItem]:

@@ -208,3 +208,7 @@ __marimo__/
 
 # Application logs
 logs/
+
+# SQLite databases
+*.db
+*.db-journal

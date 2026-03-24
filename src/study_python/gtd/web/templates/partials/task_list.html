@@ -1,0 +1,39 @@
+{% for task in tasks %}
+<div class="task-row">
+    {% if task.tag %}
+    <span class="tag-badge tag-{{ task.tag.value }}">
+        {{ tag_display.get(task.tag.value, task.tag.value) }}
+    </span>
+    {% endif %}
+    <span class="task-title">{{ task.title }}</span>
+    {% if task.parent_project_title %}
+    <span class="project-badge">[{{ task.parent_project_title }}{% if task.order is not none %} #{{ task.order + 1 }}{% endif %}]</span>
+    {% endif %}
+    {% if task.parent_project_id and task.order is not none %}
+    <form hx-post="/execution/{{ task.id }}/order_up" hx-target="#task-list" hx-swap="innerHTML" style="display:inline">
+        <input type="hidden" name="tag_filter" value="{{ tag_filter }}">
+        <button type="submit" class="btn-order">▲</button>
+    </form>
+    <form hx-post="/execution/{{ task.id }}/order_down" hx-target="#task-list" hx-swap="innerHTML" style="display:inline">
+        <input type="hidden" name="tag_filter" value="{{ tag_filter }}">
+        <button type="submit" class="btn-order">▼</button>
+    </form>
+    {% endif %}
+    {% if task.importance is not none and task.urgency is not none %}
+    <span class="score-badge">重{{ task.importance }} 緊{{ task.urgency }}</span>
+    {% endif %}
+    {% if task.id in statuses_map %}
+    <form hx-post="/execution/{{ task.id }}/status" hx-target="#task-list" hx-swap="innerHTML" style="display:inline">
+        <input type="hidden" name="tag_filter" value="{{ tag_filter }}">
+        <select name="status" class="select-input select-sm" onchange="this.form.requestSubmit()">
+            {% for val, label in statuses_map[task.id] %}
+            <option value="{{ val }}" {% if task.status == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
+</div>
+{% endfor %}
+{% if not tasks %}
+<p class="empty-msg">タスクはありません</p>
+{% endif %}

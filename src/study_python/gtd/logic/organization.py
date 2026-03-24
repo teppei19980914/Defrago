@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 
 from study_python.gtd.models import GtdItem, Tag
-from study_python.gtd.repository import GtdRepository
+from study_python.gtd.repository_protocol import GtdRepositoryProtocol
 
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class OrganizationLogic:
         repository: GTDアイテムリポジトリ。
     """
 
-    def __init__(self, repository: GtdRepository) -> None:
+    def __init__(self, repository: GtdRepositoryProtocol) -> None:
         self._repo = repository
 
     def get_unorganized_tasks(self) -> list[GtdItem]:
