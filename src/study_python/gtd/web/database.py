@@ -29,7 +29,12 @@ def get_engine(db_url: str | None = None) -> Engine:
             from study_python.gtd.web.config import get_settings
 
             db_url = get_settings().database_url
-        _engine = create_engine(db_url, echo=False)
+        kwargs: dict[str, object] = {"echo": False}
+        if db_url.startswith("postgresql"):
+            kwargs["pool_size"] = 5
+            kwargs["max_overflow"] = 10
+            kwargs["pool_pre_ping"] = True
+        _engine = create_engine(db_url, **kwargs)
     return _engine
 
 
