@@ -105,6 +105,22 @@ class CollectionLogic:
         """
         return self._repo.get_by_status(ItemStatus.INBOX)
 
+    def process_all_inbox(self) -> int:
+        """Inbox内の全アイテムを「いつかやる」に一括移動する.
+
+        Returns:
+            移動したアイテム数。
+        """
+        items = self.get_inbox_items()
+        count = 0
+        for item in items:
+            item.item_status = ItemStatus.SOMEDAY
+            item.touch()
+            count += 1
+        if count > 0:
+            logger.info(f"Processed {count} inbox items to someday")
+        return count
+
     def get_someday_items(self) -> list[GtdItem]:
         """「いつかやる」のアイテムを返す.
 

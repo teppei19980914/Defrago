@@ -56,5 +56,12 @@
 </div>
 {% endfor %}
 {% if not items %}
-<p class="empty-msg">アイテムはありません</p>
+    {% if page == "review" %}
+    <div class="flow-message">
+        <span class="flow-message-text">見直し対象はありません</span>
+        <a href="/" class="flow-message-link">→ ダッシュボードへ</a>
+    </div>
+    {% else %}
+    <p class="empty-msg">アイテムはありません</p>
+    {% endif %}
 {% endif %}

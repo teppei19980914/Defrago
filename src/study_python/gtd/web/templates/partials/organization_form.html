@@ -16,7 +16,10 @@
     <button type="submit" class="btn-primary">設定</button>
 </form>
 {% else %}
-<p class="empty-msg">整理するタスクはありません</p>
+<div class="flow-message">
+    <span class="flow-message-text">すべてのタスクを整理しました</span>
+    <a href="/execution" class="flow-message-link">→ 実行へ進む</a>
+</div>
 {% endif %}
 
 {% if quadrants %}

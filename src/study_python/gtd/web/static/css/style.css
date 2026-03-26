@@ -52,7 +52,7 @@ a { color: var(--accent-blue); text-decoration: none; }
 .nav-btn.active { background: var(--accent-blue); color: var(--bg-primary); font-weight: bold; }
 .nav-btn-sub { font-size: 12px; }
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border); padding-top: 12px; }
-.content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.content { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
 .hamburger {
     display: none; position: fixed; top: 12px; left: 12px; z-index: 100;
     background: var(--bg-secondary); border: 1px solid var(--border);
@@ -61,7 +61,7 @@ a { color: var(--accent-blue); text-decoration: none; }
 }
 
 /* Page */
-.page-container { padding: 24px; height: 100%; display: flex; flex-direction: column; }
+.page-container { padding: 24px; flex: 1; width: 100%; min-height: 0; display: flex; flex-direction: column; }
 .page-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
 .page-desc { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
 .section-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
@@ -164,8 +164,17 @@ a { color: var(--accent-blue); text-decoration: none; }
 .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .filter-label { color: var(--text-secondary); font-size: 13px; }
 
+/* Next Action */
+.next-action-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: var(--bg-secondary); border: 1px solid var(--accent-blue);
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;
+}
+.next-action-message { font-size: 16px; font-weight: bold; flex: 1; }
+.next-action-btn { white-space: nowrap; font-size: 14px; padding: 10px 24px; }
+
 /* Stats */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
 .stat-card {
     background: var(--bg-secondary); border: 1px solid var(--border);
     border-radius: 8px; padding: 16px; text-align: center;
@@ -174,8 +183,8 @@ a { color: var(--accent-blue); text-decoration: none; }
 .stat-label { color: var(--text-secondary); font-size: 12px; margin-top: 4px; }
 
 /* Matrix */
-.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
-.matrix-cell { background: var(--bg-secondary); border-radius: 8px; padding: 12px; min-height: 120px; overflow-y: auto; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; flex: 1; min-height: 0; }
+.matrix-cell { background: var(--bg-secondary); border-radius: 8px; padding: 12px; overflow-y: auto; }
 .matrix-cell.q1 { border-left: 3px solid var(--q1-color); }
 .matrix-cell.q2 { border-left: 3px solid var(--q2-color); }
 .matrix-cell.q3 { border-left: 3px solid var(--q3-color); }
@@ -217,6 +226,17 @@ a { color: var(--accent-blue); text-decoration: none; }
 .login-card .form-group { margin-bottom: 16px; }
 .error-msg { background: rgba(243,139,168,0.15); color: var(--accent-red); padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
 
+/* Flow action (next phase navigation) */
+.flow-action { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+.flow-action .btn-full { font-size: 15px; padding: 12px 24px; }
+.flow-message {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 8px; padding: 24px; text-align: center; flex: 1;
+}
+.flow-message-text { color: var(--text-secondary); font-size: 14px; }
+.flow-message-link { font-size: 14px; font-weight: bold; }
+
 /* Scrollable content areas */
 #item-list,
 #task-list,
@@ -232,4 +252,5 @@ a { color: var(--accent-blue); text-decoration: none; }
     .page-container { padding: 16px; padding-top: 56px; }
     .matrix-grid { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .matrix-grid { grid-template-rows: auto; }
 }

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.collection import CollectionLogic
@@ -45,20 +45,17 @@ def _get_inbox_context(request: Request, repo: DbGtdRepository) -> dict[str, obj
         if item.parent_project_id and item.parent_project_id not in project_groups:
             project_groups[item.parent_project_id] = item.parent_project_title
 
+    # アクション: 削除のみ（プロジェクト派生はリオーダー+削除）
     actions_map = {}
     for item in items:
         if item.parent_project_id is not None:
             actions_map[item.id] = [
                 (f"/inbox/{item.id}/order_up", "▲", False),
                 (f"/inbox/{item.id}/order_down", "▼", False),
-                (f"/inbox/{item.id}/someday", "いつかやる", False),
-                (f"/inbox/{item.id}/reference", "参考資料", False),
                 (f"/inbox/{item.id}/delete", "削除", True),
             ]
         else:
             actions_map[item.id] = [
-                (f"/inbox/{item.id}/someday", "いつかやる", False),
-                (f"/inbox/{item.id}/reference", "参考資料", False),
                 (f"/inbox/{item.id}/delete", "削除", True),
             ]
     return {
@@ -115,34 +112,15 @@ async def delete_item(
     )
 
 
-@router.post("/{item_id}/someday", response_class=HTMLResponse)
-async def move_to_someday(
-    item_id: str,
-    request: Request,
+@router.post("/process_all")
+async def process_all(
     repo: DbGtdRepository = Depends(get_repository),
-) -> HTMLResponse:
-    """アイテムを「いつかやる」に移動する（HTMX）."""
+) -> RedirectResponse:
+    """Inbox全アイテムを明確化フェーズへ送り、明確化画面にリダイレクトする."""
     logic = CollectionLogic(repo)
-    logic.move_to_someday(item_id)
+    logic.process_all_inbox()
     repo.flush_to_db()
-    return templates.TemplateResponse(
-        request, "partials/item_list.html", _get_inbox_context(request, repo)
-    )
-
-
-@router.post("/{item_id}/reference", response_class=HTMLResponse)
-async def move_to_reference(
-    item_id: str,
-    request: Request,
-    repo: DbGtdRepository = Depends(get_repository),
-) -> HTMLResponse:
-    """アイテムを参考資料に移動する（HTMX）."""
-    logic = CollectionLogic(repo)
-    logic.move_to_reference(item_id)
-    repo.flush_to_db()
-    return templates.TemplateResponse(
-        request, "partials/item_list.html", _get_inbox_context(request, repo)
-    )
+    return RedirectResponse(url="/clarification", status_code=303)
 
 
 @router.post("/{item_id}/order_up", response_class=HTMLResponse)

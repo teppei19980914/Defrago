@@ -45,5 +45,8 @@
 </div>
 {% endfor %}
 {% if not tasks %}
-<p class="empty-msg">タスクはありません</p>
+<div class="flow-message">
+    <span class="flow-message-text">実行するタスクはありません</span>
+    <a href="/inbox" class="flow-message-link">→ 新しく書き出す</a>
+</div>
 {% endif %}

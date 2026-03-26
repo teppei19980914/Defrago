@@ -94,7 +94,9 @@ class TestInbox:
         page = client.get("/inbox")
         assert "削除対象" in page.text
 
-    def test_move_to_someday(self, client):
-        client.post("/inbox/add", data={"title": "いつか"})
-        page = client.get("/inbox")
-        assert "いつか" in page.text
+    def test_process_all_redirects_to_clarification(self, client):
+        """一括処理後に明確化画面へリダイレクトする."""
+        client.post("/inbox/add", data={"title": "テスト"})
+        response = client.post("/inbox/process_all", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"] == "/clarification"

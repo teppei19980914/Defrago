@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-container">
-    <h2 class="page-title">収集 - Inbox</h2>
-    <p class="page-desc">気になることをすべて書き出しましょう</p>
+    <h2 class="page-title">収集</h2>
+    <p class="page-desc">頭の中にあることをすべて書き出しましょう。分類は後のステップで行います。</p>
 
     <form hx-post="/inbox/add" hx-target="#item-list" hx-swap="innerHTML"
           class="input-row" _="on htmx:afterRequest reset() me then focus() on me.querySelector('input')">
@@ -13,5 +13,13 @@
     <div id="item-list">
         {% include "partials/item_list.html" %}
     </div>
+
+    {% if items %}
+    <div class="flow-action">
+        <form action="/inbox/process_all" method="post">
+            <button type="submit" class="btn-primary btn-full">すべて書き出した → 明確化へ進む</button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

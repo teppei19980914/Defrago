@@ -95,6 +95,37 @@ class TestCollectionLogic:
         assert ref_items[0].title == "参考"
 
 
+class TestProcessAllInbox:
+    """process_all_inboxのテスト."""
+
+    def test_process_all_moves_to_someday(
+        self, logic: CollectionLogic, repo: DbGtdRepository
+    ):
+        """全Inboxアイテムがsomeedayに移動する."""
+        logic.add_to_inbox("アイテム1")
+        logic.add_to_inbox("アイテム2")
+        count = logic.process_all_inbox()
+        assert count == 2
+        assert len(logic.get_inbox_items()) == 0
+        assert len(logic.get_someday_items()) == 2
+
+    def test_process_all_empty_inbox(self, logic: CollectionLogic):
+        """空Inboxの場合は0を返す."""
+        count = logic.process_all_inbox()
+        assert count == 0
+
+    def test_process_all_ignores_non_inbox(
+        self, logic: CollectionLogic, repo: DbGtdRepository
+    ):
+        """Inbox以外のアイテムは影響を受けない."""
+        item = logic.add_to_inbox("参考")
+        logic.move_to_reference(item.id)
+        logic.add_to_inbox("処理対象")
+        count = logic.process_all_inbox()
+        assert count == 1
+        assert len(logic.get_reference_items()) == 1
+
+
 class TestReorderItem:
     """reorder_itemのテスト."""
 
