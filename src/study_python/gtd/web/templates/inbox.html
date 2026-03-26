@@ -4,22 +4,19 @@
     <h2 class="page-title">収集</h2>
     <p class="page-desc">頭の中にあることをすべて書き出しましょう。分類は後のステップで行います。</p>
 
-    <form hx-post="/inbox/add" hx-target="#item-list" hx-swap="innerHTML"
-          class="input-row" _="on htmx:afterRequest reset() me then focus() on me.querySelector('input')">
+    <form id="inbox-form" hx-post="/inbox/add" hx-target="#item-list" hx-swap="innerHTML" class="input-row">
         <input type="text" name="title" placeholder="気になることを入力して Enter..." class="text-input" autocomplete="off">
         <button type="submit" class="btn-primary">追加</button>
     </form>
+    <script>
+    document.getElementById('inbox-form').addEventListener('htmx:afterRequest', function(e) {
+        this.reset();
+        this.querySelector('input').focus();
+    });
+    </script>
 
     <div id="item-list">
         {% include "partials/item_list.html" %}
     </div>
-
-    {% if items %}
-    <div class="flow-action">
-        <form action="/inbox/process_all" method="post">
-            <button type="submit" class="btn-primary btn-full">すべて書き出した → 明確化へ進む</button>
-        </form>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

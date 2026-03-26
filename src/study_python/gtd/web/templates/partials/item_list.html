@@ -65,3 +65,10 @@
     <p class="empty-msg">アイテムはありません</p>
     {% endif %}
 {% endif %}
+{% if items and active_page == "/inbox" %}
+<div class="flow-action">
+    <form action="/inbox/process_all" method="post">
+        <button type="submit" class="btn-primary btn-full">すべて書き出した → 明確化へ進む</button>
+    </form>
+</div>
+{% endif %}

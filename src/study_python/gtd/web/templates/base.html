@@ -26,12 +26,26 @@
                 <a href="/logout" class="nav-btn nav-btn-sub">ログアウト</a>
             </div>
         </nav>
-
-        <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
         <main class="content">
+            <button class="hamburger" id="hamburger-btn">&#9776;</button>
             {% block content %}{% endblock %}
         </main>
     </div>
+    <script>
+    (function() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+        var btn = document.getElementById('hamburger-btn');
+        function toggle() { sidebar.classList.toggle('open'); }
+        function close() { sidebar.classList.remove('open'); }
+        btn.addEventListener('click', toggle);
+        overlay.addEventListener('click', close);
+        sidebar.querySelectorAll('.nav-btn').forEach(function(link) {
+            link.addEventListener('click', close);
+        });
+    })();
+    </script>
 </body>
 </html>
