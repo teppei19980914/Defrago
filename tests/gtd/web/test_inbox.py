@@ -1,5 +1,74 @@
 """Inboxルーターのテスト."""
 
+from study_python.gtd.models import GtdItem, ItemStatus
+from study_python.gtd.web.routers.inbox import _sort_items_by_project
+
+
+class TestSortItemsByProject:
+    """プロジェクトグルーピング・ソートのテスト."""
+
+    def test_no_project_items_unchanged(self):
+        """プロジェクト派生なしの場合、そのまま返す."""
+        items = [
+            GtdItem(title="A", item_status=ItemStatus.INBOX),
+            GtdItem(title="B", item_status=ItemStatus.INBOX),
+        ]
+        result = _sort_items_by_project(items)
+        assert [i.title for i in result] == ["A", "B"]
+
+    def test_project_items_grouped_and_sorted(self):
+        """プロジェクト派生アイテムがグループ化・order順にソートされる."""
+        items = [
+            GtdItem(title="standalone", item_status=ItemStatus.INBOX),
+            GtdItem(
+                title="sub2",
+                item_status=ItemStatus.INBOX,
+                parent_project_id="proj1",
+                parent_project_title="Project A",
+                order=1,
+            ),
+            GtdItem(
+                title="sub1",
+                item_status=ItemStatus.INBOX,
+                parent_project_id="proj1",
+                parent_project_title="Project A",
+                order=0,
+            ),
+        ]
+        result = _sort_items_by_project(items)
+        assert [i.title for i in result] == ["standalone", "sub1", "sub2"]
+
+    def test_multiple_projects_grouped_separately(self):
+        """異なるプロジェクトが別々にグループ化される."""
+        items = [
+            GtdItem(
+                title="B-sub1",
+                item_status=ItemStatus.INBOX,
+                parent_project_id="projB",
+                parent_project_title="Project B",
+                order=0,
+            ),
+            GtdItem(
+                title="A-sub1",
+                item_status=ItemStatus.INBOX,
+                parent_project_id="projA",
+                parent_project_title="Project A",
+                order=0,
+            ),
+            GtdItem(title="standalone", item_status=ItemStatus.INBOX),
+        ]
+        result = _sort_items_by_project(items)
+        titles = [i.title for i in result]
+        assert titles[0] == "standalone"
+        # Each project group is contiguous
+        proj_a_idx = titles.index("A-sub1")
+        proj_b_idx = titles.index("B-sub1")
+        assert proj_a_idx != proj_b_idx
+
+    def test_empty_list(self):
+        """空リストの場合、空リストを返す."""
+        assert _sort_items_by_project([]) == []
+
 
 class TestInbox:
     """Inboxのテスト."""

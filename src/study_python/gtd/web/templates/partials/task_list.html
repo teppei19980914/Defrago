@@ -1,14 +1,24 @@
+{% set _current_project = namespace(id='') %}
 {% for task in tasks %}
-<div class="task-row">
+{% if task.parent_project_id and task.parent_project_id != _current_project.id %}
+    {% set _current_project.id = task.parent_project_id %}
+    <div class="project-group-header">
+        <span class="project-group-icon">📁</span>
+        <span class="project-group-title">{{ task.parent_project_title }}</span>
+    </div>
+{% elif not task.parent_project_id and _current_project.id != '' %}
+    {% set _current_project.id = '' %}
+{% endif %}
+<div class="task-row {% if task.parent_project_id %}task-row-child{% endif %}">
     {% if task.tag %}
     <span class="tag-badge tag-{{ task.tag.value }}">
         {{ tag_display.get(task.tag.value, task.tag.value) }}
     </span>
     {% endif %}
-    <span class="task-title">{{ task.title }}</span>
-    {% if task.parent_project_title %}
-    <span class="project-badge">[{{ task.parent_project_title }}{% if task.order is not none %} #{{ task.order + 1 }}{% endif %}]</span>
+    {% if task.parent_project_id and task.order is not none %}
+    <span class="order-badge">#{{ task.order + 1 }}</span>
     {% endif %}
+    <span class="task-title">{{ task.title }}</span>
     {% if task.parent_project_id and task.order is not none %}
     <form hx-post="/execution/{{ task.id }}/order_up" hx-target="#task-list" hx-swap="innerHTML" style="display:inline">
         <input type="hidden" name="tag_filter" value="{{ tag_filter }}">

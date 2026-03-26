@@ -19,30 +19,52 @@ router = APIRouter(
 templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 
+def _sort_items_by_project(items: list) -> list:
+    """プロジェクト派生アイテムをグループ化・order順にソートする."""
+    standalone = [i for i in items if i.parent_project_id is None]
+    by_project: dict[str, list] = {}
+    for item in items:
+        if item.parent_project_id is not None:
+            by_project.setdefault(item.parent_project_id, []).append(item)
+    for group in by_project.values():
+        group.sort(key=lambda i: i.order if i.order is not None else 0)
+
+    result = list(standalone)
+    for group in by_project.values():
+        result.extend(group)
+    return result
+
+
 def _get_inbox_context(request: Request, repo: DbGtdRepository) -> dict[str, object]:
     logic = CollectionLogic(repo)
-    items = logic.get_inbox_items()
-    actions_map = {
-        item.id: [
-            (f"/inbox/{item.id}/someday", "いつかやる", False),
-            (f"/inbox/{item.id}/reference", "参考資料", False),
-            (f"/inbox/{item.id}/delete", "削除", True),
-        ]
-        for item in items
-    }
-    if any(i.parent_project_id for i in items):
-        for item in items:
-            if item.parent_project_id is not None:
-                actions_map[item.id] = [
-                    (f"/inbox/{item.id}/order_up", "▲", False),
-                    (f"/inbox/{item.id}/order_down", "▼", False),
-                    (f"/inbox/{item.id}/someday", "いつかやる", False),
-                    (f"/inbox/{item.id}/reference", "参考資料", False),
-                    (f"/inbox/{item.id}/delete", "削除", True),
-                ]
+    items = _sort_items_by_project(logic.get_inbox_items())
+
+    # プロジェクトグループ情報を構築
+    project_groups: dict[str, str] = {}
+    for item in items:
+        if item.parent_project_id and item.parent_project_id not in project_groups:
+            project_groups[item.parent_project_id] = item.parent_project_title
+
+    actions_map = {}
+    for item in items:
+        if item.parent_project_id is not None:
+            actions_map[item.id] = [
+                (f"/inbox/{item.id}/order_up", "▲", False),
+                (f"/inbox/{item.id}/order_down", "▼", False),
+                (f"/inbox/{item.id}/someday", "いつかやる", False),
+                (f"/inbox/{item.id}/reference", "参考資料", False),
+                (f"/inbox/{item.id}/delete", "削除", True),
+            ]
+        else:
+            actions_map[item.id] = [
+                (f"/inbox/{item.id}/someday", "いつかやる", False),
+                (f"/inbox/{item.id}/reference", "参考資料", False),
+                (f"/inbox/{item.id}/delete", "削除", True),
+            ]
     return {
         "items": items,
         "actions_map": actions_map,
+        "project_groups": project_groups,
         "active_page": "/inbox",
     }
 

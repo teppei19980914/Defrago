@@ -22,18 +22,20 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html { height: 100%; }
 body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     font-family: "Segoe UI", "Yu Gothic UI", "Meiryo UI", sans-serif;
     font-size: 14px;
     line-height: 1.5;
+    height: 100%; overflow: hidden;
 }
 
 a { color: var(--accent-blue); text-decoration: none; }
 
 /* Layout */
-.app-layout { display: flex; min-height: 100vh; }
+.app-layout { display: flex; height: 100vh; }
 .sidebar {
     width: 200px; min-width: 200px; background: var(--bg-secondary);
     border-right: 1px solid var(--border); display: flex; flex-direction: column;
@@ -50,7 +52,7 @@ a { color: var(--accent-blue); text-decoration: none; }
 .nav-btn.active { background: var(--accent-blue); color: var(--bg-primary); font-weight: bold; }
 .nav-btn-sub { font-size: 12px; }
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border); padding-top: 12px; }
-.content { flex: 1; overflow-y: auto; }
+.content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 .hamburger {
     display: none; position: fixed; top: 12px; left: 12px; z-index: 100;
     background: var(--bg-secondary); border: 1px solid var(--border);
@@ -59,7 +61,7 @@ a { color: var(--accent-blue); text-decoration: none; }
 }
 
 /* Page */
-.page-container { padding: 24px; max-width: 900px; }
+.page-container { padding: 24px; height: 100%; display: flex; flex-direction: column; }
 .page-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
 .page-desc { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
 .section-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
@@ -132,6 +134,24 @@ a { color: var(--accent-blue); text-decoration: none; }
 .project-badge { color: var(--accent-blue); font-size: 11px; font-weight: bold; }
 .score-badge { color: var(--text-muted); font-size: 11px; }
 
+/* Project groups */
+.project-group-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; margin-top: 16px; margin-bottom: 4px;
+    border-left: 3px solid var(--accent-blue); color: var(--accent-blue);
+    font-size: 13px; font-weight: bold;
+}
+.project-group-header:first-child { margin-top: 0; }
+.project-group-icon { font-size: 14px; }
+.project-group-title { flex: 1; }
+.item-card-child, .task-row-child { margin-left: 16px; border-left: 2px solid var(--bg-surface); }
+.order-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 24px; height: 20px; border-radius: 10px;
+    background: var(--bg-surface); color: var(--accent-blue);
+    font-size: 11px; font-weight: bold; padding: 0 4px;
+}
+
 /* Task rows */
 .task-row {
     background: var(--bg-secondary); border: 1px solid var(--border);
@@ -154,8 +174,8 @@ a { color: var(--accent-blue); text-decoration: none; }
 .stat-label { color: var(--text-secondary); font-size: 12px; margin-top: 4px; }
 
 /* Matrix */
-.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.matrix-cell { background: var(--bg-secondary); border-radius: 8px; padding: 12px; min-height: 120px; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
+.matrix-cell { background: var(--bg-secondary); border-radius: 8px; padding: 12px; min-height: 120px; overflow-y: auto; }
 .matrix-cell.q1 { border-left: 3px solid var(--q1-color); }
 .matrix-cell.q2 { border-left: 3px solid var(--q2-color); }
 .matrix-cell.q3 { border-left: 3px solid var(--q3-color); }
@@ -196,6 +216,12 @@ a { color: var(--accent-blue); text-decoration: none; }
 .login-subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 24px; }
 .login-card .form-group { margin-bottom: 16px; }
 .error-msg { background: rgba(243,139,168,0.15); color: var(--accent-red); padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+
+/* Scrollable content areas */
+#item-list,
+#task-list,
+#organization-area,
+#clarification-area { flex: 1; overflow-y: auto; min-height: 0; }
 
 /* Responsive */
 @media (max-width: 768px) {

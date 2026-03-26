@@ -1,14 +1,24 @@
+{% set _current_project = namespace(id='') %}
 {% for item in items %}
-<div class="item-card">
+{% if item.parent_project_id and item.parent_project_id != _current_project.id %}
+    {% set _current_project.id = item.parent_project_id %}
+    <div class="project-group-header">
+        <span class="project-group-icon">📁</span>
+        <span class="project-group-title">{{ item.parent_project_title }}</span>
+    </div>
+{% elif not item.parent_project_id and _current_project.id != '' %}
+    {% set _current_project.id = '' %}
+{% endif %}
+<div class="item-card {% if item.parent_project_id %}item-card-child{% endif %}">
     <div class="card-header">
+        {% if item.parent_project_id and item.order is not none %}
+        <span class="order-badge">#{{ item.order + 1 }}</span>
+        {% endif %}
         <span class="card-title">{{ item.title }}</span>
         {% if item.tag %}
         <span class="tag-badge tag-{{ item.tag.value }}">
             {{ {"delegation": "依頼", "calendar": "カレンダー", "project": "プロジェクト", "do_now": "即実行", "task": "タスク"}.get(item.tag.value, item.tag.value) }}
         </span>
-        {% endif %}
-        {% if item.parent_project_title %}
-        <span class="project-badge">[{{ item.parent_project_title }}{% if item.order is not none %} #{{ item.order + 1 }}{% endif %}]</span>
         {% endif %}
     </div>
     {% if item.importance is not none and item.urgency is not none %}

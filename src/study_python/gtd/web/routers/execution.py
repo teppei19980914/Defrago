@@ -37,6 +37,22 @@ STATUS_DISPLAY = {
 }
 
 
+def _sort_tasks_by_project(tasks: list) -> list:
+    """プロジェクト派生タスクをグループ化・order順にソートする."""
+    standalone = [t for t in tasks if t.parent_project_id is None]
+    by_project: dict[str, list] = {}
+    for task in tasks:
+        if task.parent_project_id is not None:
+            by_project.setdefault(task.parent_project_id, []).append(task)
+    for group in by_project.values():
+        group.sort(key=lambda t: t.order if t.order is not None else 0)
+
+    result = list(standalone)
+    for group in by_project.values():
+        result.extend(group)
+    return result
+
+
 def _get_tasks_context(
     request: Request, repo: DbGtdRepository, tag_filter: str = "all"
 ) -> dict[str, object]:
@@ -44,6 +60,14 @@ def _get_tasks_context(
     tasks = logic.get_active_tasks()
     if tag_filter != "all":
         tasks = [t for t in tasks if t.tag and t.tag.value == tag_filter]
+
+    tasks = _sort_tasks_by_project(tasks)
+
+    # プロジェクトグループ情報を構築
+    project_groups: dict[str, str] = {}
+    for task in tasks:
+        if task.parent_project_id and task.parent_project_id not in project_groups:
+            project_groups[task.parent_project_id] = task.parent_project_title
 
     statuses_map: dict[str, list[tuple[str, str]]] = {}
     for t in tasks:
@@ -61,6 +85,7 @@ def _get_tasks_context(
         "tag_display": TAG_DISPLAY,
         "status_display": STATUS_DISPLAY,
         "statuses_map": statuses_map,
+        "project_groups": project_groups,
         "count": len(tasks),
     }
 
