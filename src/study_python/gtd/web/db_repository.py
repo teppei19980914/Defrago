@@ -38,12 +38,14 @@ class DbGtdRepository:
     def __init__(self, session: Session) -> None:
         self._session = session
         self._items: list[GtdItem] = []
+        self._index: dict[str, GtdItem] = {}
         self._load_all()
 
     def _load_all(self) -> None:
         """全アイテムをDBから読み込む."""
         rows = self._session.query(GtdItemRow).all()
         self._items = [self._row_to_item(r) for r in rows]
+        self._index = {item.id: item for item in self._items}
 
     @property
     def items(self) -> list[GtdItem]:
@@ -57,6 +59,7 @@ class DbGtdRepository:
             item: 追加するアイテム。
         """
         self._items.append(item)
+        self._index[item.id] = item
 
     def remove(self, item_id: str) -> GtdItem | None:
         """アイテムをIDで物理削除する.
@@ -67,13 +70,13 @@ class DbGtdRepository:
         Returns:
             削除したアイテム。見つからない場合はNone。
         """
-        for i, item in enumerate(self._items):
-            if item.id == item_id:
-                return self._items.pop(i)
-        return None
+        item = self._index.pop(item_id, None)
+        if item is not None:
+            self._items.remove(item)
+        return item
 
     def get(self, item_id: str) -> GtdItem | None:
-        """IDでアイテムを取得する.
+        """IDでアイテムを取得する（O(1)）.
 
         Args:
             item_id: 取得するアイテムのID。
@@ -81,10 +84,7 @@ class DbGtdRepository:
         Returns:
             アイテム。見つからない場合はNone。
         """
-        for item in self._items:
-            if item.id == item_id:
-                return item
-        return None
+        return self._index.get(item_id)
 
     def get_by_status(self, status: ItemStatus) -> list[GtdItem]:
         """ItemStatusでフィルタリングしたアイテムを返す.
@@ -117,10 +117,21 @@ class DbGtdRepository:
         return [i for i in self._items if i.is_task()]
 
     def flush_to_db(self) -> None:
-        """インメモリ状態をDBに同期する."""
-        self._session.query(GtdItemRow).delete()
+        """インメモリ状態をDBに同期する.
+
+        mergeで既存行を更新し、削除されたアイテムはDBからも削除する。
+        """
+        current_ids = {item.id for item in self._items}
+
+        # DB上にあってメモリにないアイテムを削除
+        db_rows = self._session.query(GtdItemRow).all()
+        for row in db_rows:
+            if row.id not in current_ids:
+                self._session.delete(row)
+
+        # メモリのアイテムをmerge（insert or update）
         for item in self._items:
-            self._session.add(self._item_to_row(item))
+            self._session.merge(self._item_to_row(item))
         self._session.flush()
         logger.debug(f"Flushed {len(self._items)} items to DB")
 

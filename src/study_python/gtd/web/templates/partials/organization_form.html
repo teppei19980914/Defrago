@@ -27,19 +27,19 @@
 <div class="matrix-grid">
     <div class="matrix-cell q2">
         <div class="matrix-label">Q2: 効果性</div>
-        {% for item in quadrants.q2 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+        {% for item in quadrants.q2_not_urgent_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
     <div class="matrix-cell q1">
         <div class="matrix-label">Q1: 必須</div>
-        {% for item in quadrants.q1 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+        {% for item in quadrants.q1_urgent_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
     <div class="matrix-cell q4">
         <div class="matrix-label">Q4: 浪費</div>
-        {% for item in quadrants.q4 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+        {% for item in quadrants.q4_not_urgent_not_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
     <div class="matrix-cell q3">
         <div class="matrix-label">Q3: 錯覚</div>
-        {% for item in quadrants.q3 %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
+        {% for item in quadrants.q3_urgent_not_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
 </div>
 {% endif %}

@@ -11,7 +11,11 @@ from fastapi.templating import Jinja2Templates
 from study_python.gtd.logic.review import ReviewLogic
 from study_python.gtd.models import Tag
 from study_python.gtd.web.db_repository import DbGtdRepository
-from study_python.gtd.web.dependencies import get_repository, require_auth
+from study_python.gtd.web.dependencies import (
+    get_repository,
+    require_auth,
+    validate_item_id,
+)
 
 
 router = APIRouter(
@@ -52,6 +56,7 @@ async def delete_item(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """アイテムを削除する（HTMX）."""
+    validate_item_id(item_id)
     logic = ReviewLogic(repo)
     logic.delete_item(item_id)
     repo.flush_to_db()
@@ -69,6 +74,7 @@ async def move_to_inbox(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """アイテムをInboxに戻す（HTMX）."""
+    validate_item_id(item_id)
     logic = ReviewLogic(repo)
     logic.move_to_inbox(item_id)
     repo.flush_to_db()
@@ -86,6 +92,7 @@ async def decompose_project(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """プロジェクトを分解する（HTMX）."""
+    validate_item_id(item_id)
     form = await request.form()
     titles_raw = str(form.get("titles", ""))
     titles = [t.strip() for t in titles_raw.split("\n") if t.strip()]

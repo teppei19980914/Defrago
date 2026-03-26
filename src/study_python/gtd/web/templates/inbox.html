@@ -5,7 +5,7 @@
     <p class="page-desc">頭の中にあることをすべて書き出しましょう。分類は後のステップで行います。</p>
 
     <form id="inbox-form" hx-post="/inbox/add" hx-target="#item-list" hx-swap="innerHTML" class="input-row">
-        <input type="text" name="title" placeholder="気になることを入力して Enter..." class="text-input" autocomplete="off">
+        <input type="text" name="title" placeholder="気になることを入力して Enter..." class="text-input" autocomplete="off" maxlength="500">
         <button type="submit" class="btn-primary">追加</button>
     </form>
     <script>

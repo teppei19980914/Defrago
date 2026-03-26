@@ -50,11 +50,45 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="MindFlow GTD", lifespan=lifespan)
 
-    app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+    # Session middleware with security flags
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.secret_key,
+        https_only=not settings.debug,
+        same_site="lax",
+        max_age=86400,
+    )
 
     # Static files
     static_dir = Path(__file__).parent / "static"
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    # Security headers middleware
+    @app.middleware("http")
+    async def security_headers_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
+        """HTTPセキュリティヘッダーを付与する."""
+        if request.url.path.startswith("/static"):
+            return await call_next(request)
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=()"
+        )
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self'; "
+            "frame-ancestors 'none'; "
+            "form-action 'self'"
+        )
+        if not settings.debug:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+        return response
 
     # Auth redirect middleware
     @app.middleware("http")

@@ -10,7 +10,11 @@ from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.collection import CollectionLogic
 from study_python.gtd.web.db_repository import DbGtdRepository
-from study_python.gtd.web.dependencies import get_repository, require_auth
+from study_python.gtd.web.dependencies import (
+    get_repository,
+    require_auth,
+    validate_item_id,
+)
 
 
 router = APIRouter(
@@ -104,6 +108,7 @@ async def delete_item(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """アイテムを削除する（HTMX）."""
+    validate_item_id(item_id)
     logic = CollectionLogic(repo)
     logic.delete_item(item_id)
     repo.flush_to_db()
@@ -130,6 +135,7 @@ async def order_up(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """順序を上に移動する（HTMX）."""
+    validate_item_id(item_id)
     logic = CollectionLogic(repo)
     logic.reorder_item(item_id, "up")
     repo.flush_to_db()
@@ -145,6 +151,7 @@ async def order_down(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """順序を下に移動する（HTMX）."""
+    validate_item_id(item_id)
     logic = CollectionLogic(repo)
     logic.reorder_item(item_id, "down")
     repo.flush_to_db()

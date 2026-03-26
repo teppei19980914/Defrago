@@ -10,13 +10,12 @@ class TestAuth:
         assert "ログイン" in response.text
 
     def test_login_success(self, anon_client):
-        import hashlib
-
-        password = "correct-password"
-        pw_hash = hashlib.sha256(password.encode()).hexdigest()
-        # Reconfigure with correct hash
         import os
 
+        import bcrypt
+
+        password = "correct-password"
+        pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         os.environ["ADMIN_PASSWORD_HASH"] = pw_hash
         from study_python.gtd.web.config import get_settings
 

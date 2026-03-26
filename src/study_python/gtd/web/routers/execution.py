@@ -11,7 +11,11 @@ from fastapi.templating import Jinja2Templates
 from study_python.gtd.logic.execution import ExecutionLogic
 from study_python.gtd.models import get_status_enum_for_tag
 from study_python.gtd.web.db_repository import DbGtdRepository
-from study_python.gtd.web.dependencies import get_repository, require_auth
+from study_python.gtd.web.dependencies import (
+    get_repository,
+    require_auth,
+    validate_item_id,
+)
 
 
 router = APIRouter(
@@ -90,6 +94,9 @@ def _get_tasks_context(
     }
 
 
+VALID_TAG_FILTERS = {"all", "delegation", "calendar", "do_now", "task"}
+
+
 @router.get("", response_class=HTMLResponse)
 async def execution_page(
     request: Request,
@@ -97,6 +104,8 @@ async def execution_page(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """タスク一覧ページを表示する."""
+    if tag not in VALID_TAG_FILTERS:
+        tag = "all"
     return templates.TemplateResponse(
         request, "execution.html", _get_tasks_context(request, repo, tag)
     )
@@ -109,6 +118,7 @@ async def update_status(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """ステータスを更新する（HTMX）."""
+    validate_item_id(item_id)
     form = await request.form()
     new_status = str(form.get("status", ""))
     tag_filter = str(form.get("tag_filter", "all"))
@@ -134,6 +144,7 @@ async def order_up(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """順序を上に移動する（HTMX）."""
+    validate_item_id(item_id)
     form = await request.form()
     tag_filter = str(form.get("tag_filter", "all"))
     logic = ExecutionLogic(repo)
@@ -153,6 +164,7 @@ async def order_down(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
     """順序を下に移動する（HTMX）."""
+    validate_item_id(item_id)
     form = await request.form()
     tag_filter = str(form.get("tag_filter", "all"))
     logic = ExecutionLogic(repo)

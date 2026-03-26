@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Generator
 
 from fastapi import Depends, HTTPException, Request, status
@@ -9,6 +10,28 @@ from sqlalchemy.orm import Session
 
 from study_python.gtd.web.database import get_session_factory
 from study_python.gtd.web.db_repository import DbGtdRepository
+
+
+UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+)
+
+
+def validate_item_id(item_id: str) -> str:
+    """item_idがUUID形式であることを検証する.
+
+    Args:
+        item_id: 検証するID文字列。
+
+    Returns:
+        検証済みのitem_id。
+
+    Raises:
+        HTTPException: UUID形式でない場合。
+    """
+    if not UUID_PATTERN.match(item_id):
+        raise HTTPException(status_code=400, detail="Invalid item ID format")
+    return item_id
 
 
 def get_db_session() -> Generator[Session, None, None]:

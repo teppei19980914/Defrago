@@ -1,7 +1,6 @@
 """Web層テスト用フィクスチャ."""
 
-import hashlib
-
+import bcrypt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine
@@ -54,6 +53,7 @@ def _make_app(test_session_factory, monkeypatch, password_hash):
     monkeypatch.setenv("ADMIN_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_PASSWORD_HASH", password_hash)
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("DEBUG", "true")
 
     get_settings.cache_clear()
     reset_globals()
@@ -81,7 +81,7 @@ def _make_app(test_session_factory, monkeypatch, password_hash):
 def client(test_session_factory, monkeypatch):
     """認証済みTestClient."""
     password = "test-password"
-    pw_hash = hashlib.sha256(password.encode()).hexdigest()
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     app = _make_app(test_session_factory, monkeypatch, pw_hash)
 
     with TestClient(app, follow_redirects=False) as c:

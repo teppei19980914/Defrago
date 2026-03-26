@@ -39,6 +39,8 @@ class CollectionLogic:
         """
         if not title.strip():
             raise ValueError("タイトルは必須です")
+        if len(title.strip()) > 500:
+            raise ValueError("タイトルは500文字以内で入力してください")
 
         item = GtdItem(title=title.strip(), note=note.strip())
         self._repo.add(item)

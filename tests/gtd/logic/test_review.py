@@ -181,9 +181,10 @@ class TestReviewLogic:
         assert result[1].order == 1
         assert result[2].order == 2
 
-    def test_move_to_inbox_resets_parent_project(
+    def test_move_to_inbox_preserves_parent_project(
         self, logic: ReviewLogic, repo: DbGtdRepository
     ):
+        """Inboxに戻してもプロジェクト紐づけは保持される."""
         item = _create_task(repo, "サブタスク", status=TaskStatus.DONE.value)
         item.parent_project_id = "proj-123"
         item.parent_project_title = "親PJ"
@@ -191,6 +192,6 @@ class TestReviewLogic:
 
         result = logic.move_to_inbox(item.id)
         assert result is not None
-        assert result.parent_project_id is None
-        assert result.parent_project_title == ""
-        assert result.order is None
+        assert result.parent_project_id == "proj-123"
+        assert result.parent_project_title == "親PJ"
+        assert result.order == 0

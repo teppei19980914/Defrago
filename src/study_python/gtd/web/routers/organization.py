@@ -10,7 +10,20 @@ from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.organization import OrganizationLogic
 from study_python.gtd.web.db_repository import DbGtdRepository
-from study_python.gtd.web.dependencies import get_repository, require_auth
+from study_python.gtd.web.dependencies import (
+    get_repository,
+    require_auth,
+    validate_item_id,
+)
+
+
+def _safe_int(value: object, default: int, min_val: int, max_val: int) -> int:
+    """フォーム入力を安全に整数に変換する."""
+    try:
+        result = int(str(value))
+        return max(min_val, min(result, max_val))
+    except (ValueError, TypeError):
+        return default
 
 
 router = APIRouter(
@@ -52,8 +65,9 @@ async def set_scores(
     """重要度/緊急度を設定する（HTMX）."""
     form = await request.form()
     item_id = str(form.get("item_id", ""))
-    importance = int(form.get("importance", "5"))
-    urgency = int(form.get("urgency", "5"))
+    validate_item_id(item_id)
+    importance = _safe_int(form.get("importance", "5"), 5, 1, 10)
+    urgency = _safe_int(form.get("urgency", "5"), 5, 1, 10)
 
     logic = OrganizationLogic(repo)
     try:

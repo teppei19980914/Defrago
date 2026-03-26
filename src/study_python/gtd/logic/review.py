@@ -52,6 +52,7 @@ class ReviewLogic:
         """アイテムをタスクからInboxに戻す.
 
         タグ、ステータス、Context、重要度/緊急度をリセットする。
+        プロジェクトとの紐づけ（parent_project_id, order）は保持する。
 
         Args:
             item_id: Inboxに戻すアイテムのID。
@@ -64,7 +65,7 @@ class ReviewLogic:
             logger.warning(f"Item not found: {item_id}")
             return None
 
-        # タスク情報をリセット
+        # タスク情報をリセット（プロジェクト紐づけは保持）
         item.item_status = ItemStatus.INBOX
         item.tag = None
         item.status = None
@@ -73,9 +74,6 @@ class ReviewLogic:
         item.energy = None
         item.importance = None
         item.urgency = None
-        item.parent_project_id = None
-        item.parent_project_title = ""
-        item.order = None
         item.touch()
 
         logger.info(f"Moved back to inbox: '{item.title}' (id={item.id})")
