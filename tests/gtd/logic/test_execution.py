@@ -4,6 +4,7 @@ import pytest
 
 from study_python.gtd.logic.execution import ExecutionLogic
 from study_python.gtd.models import (
+    CalendarStatus,
     DelegationStatus,
     DoNowStatus,
     GtdItem,
@@ -112,6 +113,27 @@ class TestExecutionLogic:
         repo.add(item)
         result = logic.update_status(item.id, "done")
         assert result is None
+
+    def test_update_status_calendar_registered_auto_deletes(
+        self, logic: ExecutionLogic, repo: DbGtdRepository
+    ):
+        """カレンダー登録済みにするとアイテムが自動削除される."""
+        item = _create_task(repo, "予定", tag=Tag.CALENDAR)
+        result = logic.update_status(item.id, CalendarStatus.REGISTERED.value)
+        assert result is not None
+        assert result.status == CalendarStatus.REGISTERED.value
+        # リポジトリから削除されていること
+        assert repo.get(item.id) is None
+
+    def test_update_status_calendar_not_started_not_deleted(
+        self, logic: ExecutionLogic, repo: DbGtdRepository
+    ):
+        """カレンダーでもREGISTERED以外では削除されない."""
+        item = _create_task(repo, "予定", tag=Tag.CALENDAR)
+        result = logic.update_status(item.id, CalendarStatus.NOT_STARTED.value)
+        assert result is not None
+        # リポジトリに残っていること
+        assert repo.get(item.id) is not None
 
     def test_get_available_statuses_task(
         self, logic: ExecutionLogic, repo: DbGtdRepository

@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 
 from study_python.gtd.models import (
+    CalendarStatus,
     GtdItem,
     Tag,
     get_status_enum_for_tag,
@@ -81,6 +82,14 @@ class ExecutionLogic:
         item.status = new_status
         item.touch()
         logger.info(f"Updated status to '{new_status}': '{item.title}' (id={item.id})")
+
+        # カレンダー登録済みになったアイテムは自動削除
+        if item.tag == Tag.CALENDAR and new_status == CalendarStatus.REGISTERED.value:
+            self._repo.remove(item.id)
+            logger.info(
+                f"Auto-deleted calendar registered item: '{item.title}' (id={item.id})"
+            )
+
         return item
 
     def get_available_statuses(self, item_id: str) -> list[str] | None:
