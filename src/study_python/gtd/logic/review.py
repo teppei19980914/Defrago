@@ -142,3 +142,102 @@ class ReviewLogic:
             プロジェクトタスクの数。
         """
         return len(self._repo.get_by_tag(Tag.PROJECT))
+
+    def save_project_plan(
+        self,
+        item_id: str,
+        *,
+        purpose: str = "",
+        outcome: str = "",
+        support_location: str = "",
+    ) -> GtdItem | None:
+        """プロジェクトの目的・望ましい結果・サポート資料場所を保存する.
+
+        Args:
+            item_id: プロジェクトのID。
+            purpose: プロジェクトの目的。
+            outcome: 望ましい結果。
+            support_location: サポート資料の置き場所。
+
+        Returns:
+            更新されたアイテム。見つからない場合はNone。
+        """
+        item = self._repo.get(item_id)
+        if item is None or item.tag != Tag.PROJECT:
+            return None
+        item.project_purpose = purpose
+        item.project_outcome = outcome
+        item.project_support_location = support_location
+        item.touch()
+        logger.info(f"Saved project plan: '{item.title}' (id={item.id})")
+        return item
+
+    def decompose_project_planned(
+        self,
+        item_id: str,
+        sub_tasks: list[dict[str, str | bool]],
+    ) -> list[GtdItem]:
+        """計画済みプロジェクトを構造化されたサブタスクに分解する.
+
+        ナチュラル・プランニング・モデルの組織化結果を受け取り、
+        サブタスクを生成する。プロジェクトの目的・結果はnoteに記録する。
+
+        Args:
+            item_id: 分解するプロジェクトのID。
+            sub_tasks: サブタスク情報のリスト。
+                各要素: {"title": str, "is_next_action": bool, "deadline": str}
+
+        Returns:
+            作成されたサブタスクのリスト。
+
+        Raises:
+            ValueError: プロジェクトが見つからない、またはサブタスクが空の場合。
+        """
+        item = self._repo.get(item_id)
+        if item is None:
+            msg = f"Item not found: {item_id}"
+            raise ValueError(msg)
+        if item.tag != Tag.PROJECT:
+            msg = f"Item is not a project: {item_id}"
+            raise ValueError(msg)
+        if not sub_tasks:
+            msg = "At least one sub-task is required"
+            raise ValueError(msg)
+
+        project_title = item.title
+        # プロジェクトの目的・結果をnoteとしてサブタスクに引き継ぐ
+        plan_note_parts: list[str] = []
+        if item.project_purpose:
+            plan_note_parts.append(f"【目的】{item.project_purpose}")
+        if item.project_outcome:
+            plan_note_parts.append(f"【望ましい結果】{item.project_outcome}")
+        if item.project_support_location:
+            plan_note_parts.append(f"【資料】{item.project_support_location}")
+        plan_note = "\n".join(plan_note_parts)
+
+        new_items: list[GtdItem] = []
+        for idx, task_data in enumerate(sub_tasks):
+            title = str(task_data.get("title", ""))
+            if not title.strip():
+                continue
+            is_next = bool(task_data.get("is_next_action", False))
+            deadline = str(task_data.get("deadline", ""))
+
+            new_item = GtdItem(
+                title=title.strip(),
+                item_status=ItemStatus.INBOX,
+                parent_project_id=item_id,
+                parent_project_title=project_title,
+                order=idx,
+                is_next_action=is_next,
+                deadline=deadline,
+                note=plan_note,
+            )
+            self._repo.add(new_item)
+            new_items.append(new_item)
+
+        self._repo.remove(item_id)
+        logger.info(
+            f"Decomposed project '{item.title}' into {len(new_items)} planned sub-tasks"
+        )
+        return new_items

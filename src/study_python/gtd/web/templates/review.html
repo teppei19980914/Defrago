@@ -4,6 +4,7 @@
     <h2 class="page-title">見直し</h2>
     <p class="page-desc">完了タスクとプロジェクトを振り返り、整理しましょう</p>
     <p class="muted-text">完了: {{ completed_count }} 件  プロジェクト: {{ project_count }} 件</p>
+    <div id="plan-area"></div>
     <div id="item-list">
         {% set page = "review" %}
         {% include "partials/item_list.html" %}

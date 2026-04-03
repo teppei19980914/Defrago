@@ -110,3 +110,160 @@ async def decompose_project(
         "partials/item_list.html",
         {**_get_review_context(request, repo), "page": "review"},
     )
+
+
+# --- プロジェクト計画ウィザード（ナチュラル・プランニング・モデル） ---
+
+
+@router.get("/{item_id}/plan", response_class=HTMLResponse)
+async def plan_wizard(
+    item_id: str,
+    request: Request,
+    step: int = 1,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """プロジェクト計画ウィザードのステップを表示する（HTMX）."""
+    validate_item_id(item_id)
+    item = repo.get(item_id)
+    if item is None or item.tag != Tag.PROJECT:
+        return templates.TemplateResponse(
+            request,
+            "partials/item_list.html",
+            {**_get_review_context(request, repo), "page": "review"},
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/plan_step.html",
+        {"request": request, "item": item, "step": step, "brainstorm_items": []},
+    )
+
+
+@router.post("/{item_id}/plan/purpose", response_class=HTMLResponse)
+async def save_purpose(
+    item_id: str,
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """Step 1-2: 目的と望ましい結果を保存する."""
+    validate_item_id(item_id)
+    form = await request.form()
+    purpose = str(form.get("purpose", "")).strip()
+    outcome = str(form.get("outcome", "")).strip()
+
+    logic = ReviewLogic(repo)
+    logic.save_project_plan(item_id, purpose=purpose, outcome=outcome)
+    repo.flush_to_db()
+
+    item = repo.get(item_id)
+    return templates.TemplateResponse(
+        request,
+        "partials/plan_step.html",
+        {"request": request, "item": item, "step": 3, "brainstorm_items": []},
+    )
+
+
+@router.post("/{item_id}/plan/brainstorm", response_class=HTMLResponse)
+async def save_brainstorm(
+    item_id: str,
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """Step 3: ブレインストーミング結果を受け取り、Step 4へ進む."""
+    validate_item_id(item_id)
+    form = await request.form()
+    raw = str(form.get("brainstorm_items", ""))
+    brainstorm_items = [line.strip() for line in raw.split("\n") if line.strip()]
+
+    item = repo.get(item_id)
+    return templates.TemplateResponse(
+        request,
+        "partials/plan_step.html",
+        {
+            "request": request,
+            "item": item,
+            "step": 4,
+            "brainstorm_items": brainstorm_items,
+        },
+    )
+
+
+@router.post("/{item_id}/plan/organize", response_class=HTMLResponse)
+async def save_organize(
+    item_id: str,
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """Step 4-5: 組織化・サポート資料場所を受け取り、Step 6へ進む."""
+    validate_item_id(item_id)
+    form = await request.form()
+
+    support_location = str(form.get("support_location", "")).strip()
+    logic = ReviewLogic(repo)
+    logic.save_project_plan(
+        item_id,
+        purpose=repo.get(item_id).project_purpose if repo.get(item_id) else "",
+        outcome=repo.get(item_id).project_outcome if repo.get(item_id) else "",
+        support_location=support_location,
+    )
+    repo.flush_to_db()
+
+    # フォームから組織化されたタスク情報を取得
+    titles = form.getlist("task_title")
+    deadlines = form.getlist("task_deadline")
+    brainstorm_items = [str(t) for t in titles if str(t).strip()]
+    deadline_list = [str(d) for d in deadlines]
+
+    item = repo.get(item_id)
+    return templates.TemplateResponse(
+        request,
+        "partials/plan_step.html",
+        {
+            "request": request,
+            "item": item,
+            "step": 6,
+            "brainstorm_items": brainstorm_items,
+            "deadlines": deadline_list,
+        },
+    )
+
+
+@router.post("/{item_id}/plan/execute", response_class=HTMLResponse)
+async def execute_plan(
+    item_id: str,
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """Step 6: ネクストアクションを確定し、サブタスクを生成する."""
+    validate_item_id(item_id)
+    form = await request.form()
+
+    titles = form.getlist("task_title")
+    deadlines = form.getlist("task_deadline")
+    next_actions = form.getlist("next_action")
+
+    sub_tasks: list[dict[str, str | bool]] = []
+    for i, title in enumerate(titles):
+        title_str = str(title).strip()
+        if not title_str:
+            continue
+        sub_tasks.append(
+            {
+                "title": title_str,
+                "deadline": str(deadlines[i]) if i < len(deadlines) else "",
+                "is_next_action": str(i) in [str(n) for n in next_actions],
+            }
+        )
+
+    if sub_tasks:
+        logic = ReviewLogic(repo)
+        try:
+            logic.decompose_project_planned(item_id, sub_tasks)
+            repo.flush_to_db()
+        except ValueError:
+            pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/item_list.html",
+        {**_get_review_context(request, repo), "page": "review"},
+    )

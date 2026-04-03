@@ -30,12 +30,37 @@ from study_python.logging_config import setup_logging
 logger = logging.getLogger(__name__)
 
 
+def _migrate_add_project_planning_columns(engine: object) -> None:
+    """プロジェクト計画カラムを既存テーブルに追加するマイグレーション."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    if not insp.has_table("gtd_items"):
+        return
+    existing = {c["name"] for c in insp.get_columns("gtd_items")}
+    new_columns = {
+        "project_purpose": "TEXT DEFAULT ''",
+        "project_outcome": "TEXT DEFAULT ''",
+        "project_support_location": "TEXT DEFAULT ''",
+        "is_next_action": "BOOLEAN DEFAULT 0",
+        "deadline": "VARCHAR(50) DEFAULT ''",
+    }
+    with engine.begin() as conn:
+        for col_name, col_def in new_columns.items():
+            if col_name not in existing:
+                conn.execute(
+                    text(f"ALTER TABLE gtd_items ADD COLUMN {col_name} {col_def}")
+                )
+                logger.info(f"Migration: added column '{col_name}' to gtd_items")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """アプリケーションのライフサイクル管理."""
     setup_logging(level="INFO", log_to_file=True, log_to_console=True)
     engine = get_engine()
     Base.metadata.create_all(engine)
+    _migrate_add_project_planning_columns(engine)
     logger.info("MindFlow Web started")
     yield
 

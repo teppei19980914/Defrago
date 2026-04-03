@@ -249,6 +249,49 @@ a { color: var(--accent-blue); text-decoration: none; }
 #organization-area,
 #clarification-area { flex: 1; overflow-y: auto; min-height: 0; }
 
+/* Plan wizard */
+.plan-wizard {
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; margin-bottom: 16px;
+}
+.plan-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+}
+.plan-project-title { font-weight: bold; font-size: 16px; }
+.plan-step-badge {
+    background: var(--accent); color: #fff; padding: 2px 10px;
+    border-radius: 12px; font-size: 12px; font-weight: bold;
+}
+.plan-step-title { font-size: 15px; margin-bottom: 4px; }
+.plan-context {
+    background: var(--bg-primary); border-left: 3px solid var(--accent);
+    padding: 10px 14px; border-radius: 4px; margin: 12px 0;
+    font-size: 13px; line-height: 1.6;
+}
+.form-hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.organize-list { display: flex; flex-direction: column; gap: 8px; }
+.organize-row {
+    display: flex; align-items: center; gap: 8px;
+}
+.organize-index {
+    font-size: 12px; font-weight: bold; color: var(--text-secondary);
+    min-width: 24px; text-align: center;
+}
+.organize-title { flex: 1; }
+.organize-deadline { width: 150px; }
+.next-action-list { display: flex; flex-direction: column; gap: 6px; }
+.next-action-row {
+    display: flex; align-items: center; gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+.next-action-badge {
+    background: #e8f5e9; color: #2e7d32; padding: 1px 6px;
+    border-radius: 4px; font-size: 11px; font-weight: bold;
+}
+.next-action-title { flex: 1; }
+.next-action-deadline { font-size: 12px; color: var(--text-secondary); }
+
 /* Responsive */
 @media (max-width: 768px) {
     .page-container { padding: 16px; padding-top: 56px; }

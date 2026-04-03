@@ -35,6 +35,13 @@ class GtdItemRow(Base):
     importance: Mapped[int | None] = mapped_column(Integer, nullable=True)
     urgency: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # プロジェクト計画（ナチュラル・プランニング・モデル）
+    project_purpose: Mapped[str] = mapped_column(Text, default="")
+    project_outcome: Mapped[str] = mapped_column(Text, default="")
+    project_support_location: Mapped[str] = mapped_column(Text, default="")
+    is_next_action: Mapped[bool] = mapped_column(default=False)
+    deadline: Mapped[str] = mapped_column(String(50), default="")
+
     # プロジェクト分解
     parent_project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     parent_project_title: Mapped[str] = mapped_column(String(500), default="")

@@ -164,6 +164,13 @@ class GtdItem:
     parent_project_title: str = ""
     order: int | None = None
 
+    # プロジェクト計画（ナチュラル・プランニング・モデル）
+    project_purpose: str = ""
+    project_outcome: str = ""
+    project_support_location: str = ""
+    is_next_action: bool = False
+    deadline: str = ""
+
     # メモ
     note: str = ""
 
