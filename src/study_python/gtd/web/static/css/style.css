@@ -229,6 +229,8 @@ a { color: var(--accent-blue); text-decoration: none; }
 }
 .login-title { font-size: 28px; font-weight: bold; color: var(--accent-blue); text-align: center; margin-bottom: 4px; }
 .login-subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 24px; }
+.login-register-link { text-align: center; font-size: 13px; margin-top: 16px; color: var(--text-secondary); }
+.login-register-link a { color: var(--accent); }
 .login-card .form-group { margin-bottom: 16px; }
 .error-msg { background: rgba(243,139,168,0.15); color: var(--accent-red); padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
 

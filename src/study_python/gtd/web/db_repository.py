@@ -2,6 +2,8 @@
 
 リクエストスコープでインメモリにアイテムを保持し、
 flush_to_dbでDB同期する。ロジック層はGtdRepositoryProtocolを通じて利用する。
+
+すべてのデータアクセスはuser_idでフィルタされる。
 """
 
 from __future__ import annotations
@@ -26,24 +28,34 @@ logger = logging.getLogger(__name__)
 
 
 class DbGtdRepository:
-    """SQLAlchemy永続化リポジトリ.
+    """SQLAlchemy永続化リポジトリ（user_idスコープ）.
 
-    リクエストごとにDBから全アイテムをメモリに読み込み、
+    リクエストごとに指定user_idのアイテムのみをメモリに読み込み、
     ロジック層のin-place変更後にflush_to_dbでDB同期する。
 
     Args:
         session: SQLAlchemyセッション。
+        user_id: フィルタ対象のユーザーID。
     """
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, user_id: str = "") -> None:
         self._session = session
+        self._user_id = user_id
         self._items: list[GtdItem] = []
         self._index: dict[str, GtdItem] = {}
         self._load_all()
 
+    @property
+    def user_id(self) -> str:
+        """現在のユーザーIDを返す."""
+        return self._user_id
+
     def _load_all(self) -> None:
-        """全アイテムをDBから読み込む."""
-        rows = self._session.query(GtdItemRow).all()
+        """指定user_idのアイテムのみをDBから読み込む."""
+        query = self._session.query(GtdItemRow)
+        if self._user_id:
+            query = query.filter(GtdItemRow.user_id == self._user_id)
+        rows = query.all()
         self._items = [self._row_to_item(r) for r in rows]
         self._index = {item.id: item for item in self._items}
 
@@ -53,11 +65,12 @@ class DbGtdRepository:
         return self._items
 
     def add(self, item: GtdItem) -> None:
-        """アイテムを追加する.
+        """アイテムを追加する（user_idを自動付与）.
 
         Args:
             item: 追加するアイテム。
         """
+        item.user_id = self._user_id
         self._items.append(item)
         self._index[item.id] = item
 
@@ -77,6 +90,8 @@ class DbGtdRepository:
 
     def get(self, item_id: str) -> GtdItem | None:
         """IDでアイテムを取得する（O(1)）.
+
+        user_idスコープ内のアイテムのみ返す。
 
         Args:
             item_id: 取得するアイテムのID。
@@ -117,23 +132,27 @@ class DbGtdRepository:
         return [i for i in self._items if i.is_task()]
 
     def flush_to_db(self) -> None:
-        """インメモリ状態をDBに同期する.
+        """インメモリ状態をDBに同期する（user_idスコープ内のみ）.
 
         mergeで既存行を更新し、削除されたアイテムはDBからも削除する。
         """
         current_ids = {item.id for item in self._items}
 
-        # DB上にあってメモリにないアイテムを削除
-        db_rows = self._session.query(GtdItemRow).all()
+        # DB上にあってメモリにないアイテムを削除（自分のデータのみ）
+        query = self._session.query(GtdItemRow)
+        if self._user_id:
+            query = query.filter(GtdItemRow.user_id == self._user_id)
+        db_rows = query.all()
         for row in db_rows:
             if row.id not in current_ids:
                 self._session.delete(row)
 
         # メモリのアイテムをmerge（insert or update）
         for item in self._items:
+            item.user_id = self._user_id
             self._session.merge(self._item_to_row(item))
         self._session.flush()
-        logger.debug(f"Flushed {len(self._items)} items to DB")
+        logger.debug(f"Flushed {len(self._items)} items to DB for user={self._user_id}")
 
     @staticmethod
     def _row_to_item(row: GtdItemRow) -> GtdItem:
@@ -145,6 +164,7 @@ class DbGtdRepository:
         )
         return GtdItem(
             id=row.id,
+            user_id=row.user_id,
             title=row.title,
             created_at=row.created_at,
             updated_at=row.updated_at,
@@ -174,6 +194,7 @@ class DbGtdRepository:
         """GtdItemからDBの行を生成する."""
         return GtdItemRow(
             id=item.id,
+            user_id=item.user_id,
             title=item.title,
             created_at=item.created_at,
             updated_at=item.updated_at,

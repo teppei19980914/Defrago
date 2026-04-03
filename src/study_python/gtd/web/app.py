@@ -44,6 +44,7 @@ def _migrate_add_project_planning_columns(engine: object) -> None:
         "project_support_location": "TEXT DEFAULT ''",
         "is_next_action": "BOOLEAN DEFAULT 0",
         "deadline": "VARCHAR(50) DEFAULT ''",
+        "user_id": "VARCHAR(36) NOT NULL DEFAULT ''",
     }
     with engine.begin() as conn:
         for col_name, col_def in new_columns.items():

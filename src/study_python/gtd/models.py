@@ -139,6 +139,7 @@ class GtdItem:
     """
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str = ""
     title: str = ""
     created_at: str = field(default_factory=_now_iso)
     updated_at: str = field(default_factory=_now_iso)

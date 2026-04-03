@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindFlow - 新規登録</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h1 class="login-title">MindFlow</h1>
+            <p class="login-subtitle">新規アカウント登録</p>
+            {% if error %}
+            <div class="error-msg">{{ error }}</div>
+            {% endif %}
+            <form method="POST" action="/register">
+                <div class="form-group">
+                    <input type="text" name="username" placeholder="ユーザー名（英数字3〜50文字）"
+                           value="{{ username|default('') }}" class="text-input" required autofocus
+                           pattern="[a-zA-Z0-9_-]{3,50}" title="英数字・アンダースコア・ハイフンで3〜50文字">
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="パスワード（8文字以上）"
+                           class="text-input" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password_confirm" placeholder="パスワード（確認）"
+                           class="text-input" required minlength="8">
+                </div>
+                <button type="submit" class="btn-primary btn-full">登録してはじめる</button>
+            </form>
+            <p class="login-register-link">既にアカウントをお持ちの方は <a href="/login">ログイン</a></p>
+        </div>
+    </div>
+</body>
+</html>

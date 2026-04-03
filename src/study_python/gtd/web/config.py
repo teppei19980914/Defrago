@@ -19,8 +19,6 @@ class WebSettings:
     """Webアプリケーション設定."""
 
     secret_key: str = ""
-    admin_username: str = "admin"
-    admin_password_hash: str = ""
     database_url: str = "sqlite:///./mindflow.db"
     debug: bool = False
 
@@ -40,14 +38,8 @@ def get_settings() -> WebSettings:
         msg = "SECRET_KEY environment variable must be set"
         raise ValueError(msg)
 
-    admin_password_hash = os.environ.get("ADMIN_PASSWORD_HASH", "")
-    if not admin_password_hash:
-        logger.warning("ADMIN_PASSWORD_HASH is not set - login will be disabled")
-
     return WebSettings(
         secret_key=secret_key,
-        admin_username=os.environ.get("ADMIN_USERNAME", "admin"),
-        admin_password_hash=admin_password_hash,
         database_url=os.environ.get("DATABASE_URL", "sqlite:///./mindflow.db"),
         debug=os.environ.get("DEBUG", "false").lower() == "true",
     )

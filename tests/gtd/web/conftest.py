@@ -1,11 +1,11 @@
 """Web層テスト用フィクスチャ."""
 
-import bcrypt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from study_python.gtd.web.auth import register_user
 from study_python.gtd.web.config import get_settings
 from study_python.gtd.web.database import Base, reset_globals
 from study_python.gtd.web.dependencies import get_db_session
@@ -47,11 +47,9 @@ def test_session(test_session_factory) -> Session:
     session.close()
 
 
-def _make_app(test_session_factory, monkeypatch, password_hash):
+def _make_app(test_session_factory, monkeypatch):
     """テスト用アプリを構築する."""
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-testing")
-    monkeypatch.setenv("ADMIN_USERNAME", "admin")
-    monkeypatch.setenv("ADMIN_PASSWORD_HASH", password_hash)
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
     monkeypatch.setenv("DEBUG", "true")
 
@@ -80,19 +78,23 @@ def _make_app(test_session_factory, monkeypatch, password_hash):
 @pytest.fixture
 def client(test_session_factory, monkeypatch):
     """認証済みTestClient."""
-    password = "test-password"
-    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-    app = _make_app(test_session_factory, monkeypatch, pw_hash)
+    app = _make_app(test_session_factory, monkeypatch)
+
+    # テスト用ユーザーをDBに登録
+    session = test_session_factory()
+    register_user(session, "testuser", "test-password")
+    session.commit()
+    session.close()
 
     with TestClient(app, follow_redirects=False) as c:
-        c.post("/login", data={"username": "admin", "password": password})
+        c.post("/login", data={"username": "testuser", "password": "test-password"})
         yield c
 
 
 @pytest.fixture
 def anon_client(test_session_factory, monkeypatch):
     """未認証TestClient."""
-    app = _make_app(test_session_factory, monkeypatch, "dummy")
+    app = _make_app(test_session_factory, monkeypatch)
 
     with TestClient(app, follow_redirects=False) as c:
         yield c

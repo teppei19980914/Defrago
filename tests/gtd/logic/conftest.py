@@ -32,4 +32,4 @@ def test_session(test_engine):
 @pytest.fixture
 def repo(test_session) -> DbGtdRepository:
     """テスト用リポジトリ."""
-    return DbGtdRepository(test_session)
+    return DbGtdRepository(test_session, "test-user-id")

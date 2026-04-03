@@ -8,12 +8,24 @@ from sqlalchemy.orm import Mapped, mapped_column
 from study_python.gtd.web.database import Base
 
 
+class UserRow(Base):
+    """ユーザーのDBテーブル定義."""
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(50), nullable=False)
+
+
 class GtdItemRow(Base):
     """GTDアイテムのDBテーブル定義."""
 
     __tablename__ = "gtd_items"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     created_at: Mapped[str] = mapped_column(String(50), nullable=False)
     updated_at: Mapped[str] = mapped_column(String(50), nullable=False)

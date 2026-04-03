@@ -52,36 +52,44 @@ def get_db_session() -> Generator[Session, None, None]:
         session.close()
 
 
-def get_repository(
-    session: Session = Depends(get_db_session),
-) -> DbGtdRepository:
-    """リポジトリを取得する.
-
-    Args:
-        session: DBセッション。
-
-    Returns:
-        DbGtdRepositoryインスタンス。
-    """
-    return DbGtdRepository(session)
-
-
 def require_auth(request: Request) -> str:
-    """認証を要求する.
+    """認証を要求し、user_idを返す.
 
     Args:
         request: HTTPリクエスト。
 
     Returns:
-        認証済みユーザー名。
+        認証済みユーザーのuser_id。
 
     Raises:
         HTTPException: 未認証の場合。
     """
-    username = request.session.get("username")
-    if not username:
+    user_id = request.session.get("user_id")
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
             headers={"Location": "/login"},
         )
-    return str(username)
+    return str(user_id)
+
+
+def get_repository(
+    request: Request,
+    session: Session = Depends(get_db_session),
+    user_id: str = Depends(require_auth),
+) -> DbGtdRepository:
+    """認証済みユーザーのリポジトリを取得する.
+
+    user_idでフィルタされたリポジトリを返す。
+    ロジック層・ルーター層がどう呼んでも、
+    他ユーザーのデータにはアクセスできない。
+
+    Args:
+        request: HTTPリクエスト。
+        session: DBセッション。
+        user_id: 認証済みユーザーID。
+
+    Returns:
+        user_idフィルタ済みDbGtdRepositoryインスタンス。
+    """
+    return DbGtdRepository(session, user_id)

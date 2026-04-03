@@ -1,22 +1,92 @@
-# MindFlow - GTD タスク管理アプリ
+<div align="center">
 
-GTD（Getting Things Done）手法に基づくWebタスク管理アプリケーション。FastAPI + Jinja2 + HTMX で構築し、モバイル・PC両対応のレスポンシブUIを提供する。重要度×緊急度マトリクスによるタスクの可視化と、5つのGTDフェーズ（収集・明確化・整理・実行・見直し）をサポートする。
+# MindFlow
+
+**頭の中を、空にする。**
+
+脳のワーキングメモリを解放し、あなたの創造性を最大化するGTDタスク管理アプリ
+
+[セットアップ](#セットアップ) ・ [使い方](#使い方) ・ [技術スタック](#技術スタック)
+
+</div>
+
+---
+
+## あなたの脳は、タスクの倉庫ではない。
+
+「あれもやらなきゃ」「これも忘れちゃいけない」——頭の中がタスクで埋め尽くされていませんか？
+
+脳のワーキングメモリは極めて有限です。未処理のタスクがメモリを占有し続ける限り、本来の創造的な処理能力は発揮できません。
+
+**MindFlow**は、頭の中のすべてを安全な外部ストレージに書き出し、脳を本来のフロー状態へ導くツールです。
+
+> **Mind** = 脳内メモリ　|　**Flow** = 雑念なく没頭できる状態
+
+---
+
+## 3つの設計原則
+
+| 原則 | 説明 |
+|------|------|
+| **Zero-Friction Capture** | 書き出す行為のハードルを限りなくゼロに。思いついた瞬間に外部化する |
+| **One Screen, One Decision** | 各画面で求める判断は常に1つだけ。迷わない、考えさせない |
+| **Think Less, Do More** | アプリが判断フローを導く。管理に頭を使わず、行動に集中する |
+
+---
 
 ## 主な機能
 
-- **収集（Inbox）**: 気になることをすべてInboxに登録。削除・参考資料・いつかやるに分類
-- **明確化**: ウィザード形式でアイテムをタスク化。依頼・カレンダー・プロジェクト・即実行・タスクに分類
-- **整理**: 重要度（1-10）× 緊急度（1-10）の定量評価。4象限マトリクスで可視化
-- **実行**: タスク一覧からステータスを変更。フィルタリング・優先度ソート対応
-- **見直し**: 完了タスクとプロジェクトをレビュー。プロジェクトの細分化・削除またはInboxに再循環
-- **プロジェクト分解**: プロジェクトをサブタスクに分解。分解元プロジェクトとの紐づき・順序を保持し、Inbox・タスク画面で順序変更可能
+### GTD 5つのフェーズ
 
-## 必要条件
+```
+収集 → 明確化 → 整理 → 実行 → 見直し → (循環)
+```
+
+| フェーズ | できること |
+|---------|-----------|
+| **収集** | 気になることをすべてInboxに書き出す。ゼロフリクションで脳を空にする |
+| **明確化** | ウィザードがYes/Noで導く。依頼・カレンダー・プロジェクト・即実行・タスクに自動分類 |
+| **整理** | 重要度 × 緊急度を10段階で評価。アイゼンハワー・マトリクスで優先順位を可視化 |
+| **実行** | 今やるべきタスクをフィルタリング。ステータス変更はワンタップ |
+| **見直し** | 完了タスクの振り返りとプロジェクトの再計画。GTDサイクルを回し続ける |
+
+### プロジェクト計画（ナチュラル・プランニング・モデル）
+
+大きなプロジェクトは、GTD理論に基づく6ステップで構造化します。
+
+```
+Step 1-2  目的の定義 & 望ましい結果
+          → 判断基準が明確になり、迷いがなくなる
+
+Step 3    ブレインストーミング
+          → 判断せず、関連する要素をすべて洗い出す
+
+Step 4-5  組織化 & サポート資料
+          → タスクの整理・期限設定・資料の保管場所を記録
+
+Step 6    ネクストアクションの特定
+          → 「今日、自分は何をするか」が明確になる
+```
+
+### 重要度 × 緊急度マトリクス
+
+| 象限 | 重要度 | 緊急度 | アクション |
+|------|--------|--------|-----------|
+| **Q1** 必須の領域 | 高 | 高 | 今すぐ実行 |
+| **Q2** 効果性の領域 | 高 | 低 | 計画を立てる |
+| **Q3** 錯覚の領域 | 低 | 高 | 委任を検討 |
+| **Q4** 浪費の領域 | 低 | 低 | 後回し/削除 |
+
+---
+
+## セットアップ
+
+### 必要条件
 
 - Python 3.12 以上
 - [uv](https://docs.astral.sh/uv/)（推奨）または pip
 
-## セットアップ
+### インストール & 起動
 
 ```bash
 git clone https://github.com/your-username/mindflow.git
@@ -26,133 +96,97 @@ uv sync --dev
 # 環境変数を設定
 export SECRET_KEY="your-secret-key"
 export ADMIN_USERNAME="admin"
-export ADMIN_PASSWORD_HASH=$(python -c "import hashlib; print(hashlib.sha256(b'your-password'.encode()).hexdigest())")
+export ADMIN_PASSWORD_HASH=$(python -c "import hashlib; print(hashlib.sha256(b'your-password').hexdigest())")
 
 # 起動
 uv run mindflow-web
-# → http://localhost:8000 でアクセス
 ```
 
-## 開発コマンド
+ブラウザで **http://localhost:8000** にアクセス。モバイル・PC両対応。
 
-```bash
-# テスト実行
-uv run pytest
+---
 
-# テスト（カバレッジ付き）
-uv run pytest --cov=src/study_python --cov-report=term-missing
+## 使い方
 
-# リンター実行
-uv run ruff check .
+### 1. 頭の中を空にする（収集）
 
-# フォーマッター実行
-uv run ruff format .
+Inboxを開き、気になっていることをすべて書き出します。正確さや順番は気にしません。「あとで考える」を脳から追い出すことが目的です。
 
-# 型チェック
-uv run mypy src/
-```
+### 2. ウィザードに従う（明確化）
+
+アプリがYes/Noの質問で導きます。自分で分類ルールを考える必要はありません。
+
+- 自分でやらない → **依頼**
+- 日時が明確 → **カレンダー**
+- 2ステップ以上 → **プロジェクト**（6ステップで計画）
+- 数分で可能 → **即実行**
+- その他 → **タスク**（場所・時間・エネルギーを設定）
+
+### 3. 優先順位をつける（整理）
+
+重要度と緊急度をスライダーで評価するだけ。4象限マトリクスが自動生成されます。
+
+### 4. 行動する（実行）
+
+ダッシュボードが「次に何をすべきか」を教えてくれます。あなたは実行するだけです。
+
+### 5. 振り返る（見直し）
+
+完了タスクをレビューし、プロジェクトを再計画します。GTDサイクルが回り続けることで、頭の中は常にクリアな状態を保てます。
+
+---
 
 ## アーキテクチャ
 
 ```
 src/study_python/gtd/
 ├── models.py              # データモデル（StrEnum + dataclass）
-├── repository_protocol.py # リポジトリProtocol（ロジック層の抽象化）
+├── repository_protocol.py # リポジトリProtocol
 ├── logic/                 # ビジネスロジック（Web非依存）
-│   ├── collection.py      # 収集フェーズ
-│   ├── clarification.py   # 明確化フェーズ
-│   ├── organization.py    # 整理フェーズ
-│   ├── execution.py       # 実行フェーズ
-│   └── review.py          # 見直しフェーズ
+│   ├── collection.py      # 収集
+│   ├── clarification.py   # 明確化
+│   ├── organization.py    # 整理
+│   ├── execution.py       # 実行
+│   └── review.py          # 見直し
 └── web/                   # FastAPI Webアプリケーション
-    ├── app.py             # FastAPIアプリファクトリ
-    ├── config.py          # 環境変数設定
-    ├── database.py        # SQLAlchemy engine/session
-    ├── db_models.py       # ORMモデル
-    ├── db_repository.py   # SQLAlchemy永続化リポジトリ
-    ├── auth.py            # 認証（SHA-256）
-    ├── dependencies.py    # FastAPI DI
+    ├── app.py             # アプリファクトリ
     ├── routers/           # 各フェーズのルーター
-    ├── templates/         # Jinja2テンプレート + HTMXパーシャル
-    └── static/            # CSS（Catppuccin dark）+ HTMX
+    ├── templates/         # Jinja2 + HTMXパーシャル
+    └── static/            # CSS + HTMX
 ```
 
 ### 設計方針
 
-- **ロジック層分離**: `GtdRepositoryProtocol` を介してビジネスロジックをWeb層から分離
-- **3層アーキテクチャ**: Model（models.py） → Logic（logic/） → Web（web/）
-- **SQLite永続化**: SQLAlchemy経由。環境変数 `DATABASE_URL` で設定
-- **セッション認証**: 単一ユーザー。環境変数でユーザー名/パスワードハッシュを設定
-- **HTMX**: ページ遷移なしのインタラクティブUI
+- **ロジック層分離**: `GtdRepositoryProtocol`を介し、ビジネスロジックをWeb層から完全分離
+- **3層アーキテクチャ**: Model → Logic → Web
+- **HTMX**: ページ遷移なしのインタラクティブUI。SPAの体験をサーバーサイドで実現
+- **SQLite永続化**: 軽量でゼロ設定。環境変数`DATABASE_URL`で変更可能
 
-## GTDフロー
+---
 
-```mermaid
-graph LR
-  A[収集] --> B[明確化]
-  B --> C[整理]
-  C --> D[実行]
-  D --> E[見直し]
-  E -->|Inboxに戻す| A
+## 開発
+
+```bash
+uv run pytest                          # テスト
+uv run pytest --cov=src/study_python   # カバレッジ付き
+uv run ruff check .                    # リンター
+uv run ruff format .                   # フォーマッター
+uv run mypy src/                       # 型チェック
 ```
-
-### タスク分類（明確化フェーズ）
-
-| 条件 | タグ | ステータス選択肢 |
-|------|------|-----------------|
-| 自分でやらない | 依頼 | 未着手・連絡待ち・完了 |
-| 日時が明確 | カレンダー | 未着手・カレンダー登録済み |
-| 2Step以上必要 | プロジェクト | -（見直しフェーズで細分化→サブタスクに分解） |
-| 数分で可能 | 即実行 | 未着手・完了 |
-| その他 | タスク | 未着手・実施中・完了 |
-
-### タスクContext（タスクタグの場合）
-
-- **実施場所**: デスク / 自宅 / 移動中（複数選択可）
-- **時間**: 10分以内 / 30分以内 / 1時間以内
-- **エネルギー**: 低 / 中 / 高
-
-### 重要度×緊急度マトリクス
-
-| 象限 | 重要度 | 緊急度 | アクション |
-|------|--------|--------|-----------|
-| Q1 | > 5 | > 5 | 今すぐ実行 |
-| Q2 | > 5 | <= 5 | 計画を立てる |
-| Q3 | <= 5 | > 5 | 委任を検討 |
-| Q4 | <= 5 | <= 5 | 後回し/削除 |
-
-### プロジェクト分解と順序管理
-
-見直しフェーズでプロジェクトを「細分化」すると、サブタスクがInboxに登録される。各サブタスクは以下の情報を保持する：
-
-- **親プロジェクトID/タイトル**: どのプロジェクトから分解されたか
-- **順序（order）**: プロジェクト内での着手順序（0始まり）
-
-Inbox・タスク一覧画面ではカード上に `[プロジェクト名 #順序]` が表示され、▲▼ボタンで順序を変更できる。
-
-## データ保存先
-
-- **データベース**: SQLite（デフォルト: `./mindflow.db`、環境変数 `DATABASE_URL` で変更可能）
-- **ログ**: プロジェクトルートの `logs/` ディレクトリ
-
-## デプロイ（Render）
-
-Web版はRenderにデプロイ可能。`render.yaml` でサービス定義済み。
-
-環境変数の設定:
-- `SECRET_KEY`: セッション暗号化キー（自動生成）
-- `ADMIN_USERNAME`: ログインユーザー名
-- `ADMIN_PASSWORD_HASH`: パスワードのSHA-256ハッシュ
-- `DATABASE_URL`: SQLiteパス（Render Disk使用時: `sqlite:////opt/render/project/data/mindflow.db`）
 
 ## 技術スタック
 
-- **Webフレームワーク**: FastAPI + Jinja2 + HTMX
-- **データ永続化**: SQLite + SQLAlchemy
-- **テスト**: pytest + httpx
-- **リンター**: ruff
-- **型チェック**: mypy（strict mode）
-- **CI/CD**: GitHub Actions + Render
+| カテゴリ | 技術 |
+|---------|------|
+| Web | FastAPI + Jinja2 + HTMX |
+| DB | SQLite + SQLAlchemy |
+| テスト | pytest + httpx |
+| 品質 | ruff + mypy（strict） |
+| CI/CD | GitHub Actions + Render |
+
+## デプロイ
+
+Renderにデプロイ可能（`render.yaml`定義済み）。環境変数`SECRET_KEY`、`ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`DATABASE_URL`を設定してください。
 
 ## ライセンス
 
