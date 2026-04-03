@@ -205,9 +205,7 @@ class TestReviewLogic:
         result = logic.save_project_plan(task.id, purpose="テスト")
         assert result is None
 
-    def test_decompose_project_planned(
-        self, logic: ReviewLogic, repo: DbGtdRepository
-    ):
+    def test_decompose_project_planned(self, logic: ReviewLogic, repo: DbGtdRepository):
         """計画済みプロジェクトを構造化サブタスクに分解できる."""
         project = _create_task(repo, "計画PJ", tag=Tag.PROJECT)
         project.project_purpose = "目的テスト"
