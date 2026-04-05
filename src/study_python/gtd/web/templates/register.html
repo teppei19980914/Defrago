@@ -3,34 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindFlow - 新規登録</title>
+    <title>{{ labels.app.name }} - {{ labels.auth.register }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div class="login-container">
+    <div class="login-container login-two-col">
         <div class="login-card">
-            <h1 class="login-title">MindFlow</h1>
-            <p class="login-subtitle">新規アカウント登録</p>
+            <h1 class="login-title">{{ labels.app.name }}</h1>
+            <p class="login-subtitle">{{ labels.auth.register_subtitle }}</p>
             {% if error %}
             <div class="error-msg">{{ error }}</div>
             {% endif %}
             <form method="POST" action="/register">
                 <div class="form-group">
-                    <input type="text" name="username" placeholder="ユーザー名（英数字3〜50文字）"
+                    <input type="text" name="username" placeholder="{{ labels.auth.username_hint }}"
                            value="{{ username|default('') }}" class="text-input" required autofocus
-                           pattern="[a-zA-Z0-9_-]{3,50}" title="英数字・アンダースコア・ハイフンで3〜50文字">
+                           pattern="[a-zA-Z0-9_-]{3,50}" title="{{ labels.auth.error_username_format }}">
                 </div>
                 <div class="form-group">
-                    <input type="password" name="password" placeholder="パスワード（8文字以上）"
+                    <input type="password" name="password" placeholder="{{ labels.auth.password_hint }}"
                            class="text-input" required minlength="8">
                 </div>
                 <div class="form-group">
-                    <input type="password" name="password_confirm" placeholder="パスワード（確認）"
+                    <input type="password" name="password_confirm" placeholder="{{ labels.auth.password_confirm_placeholder }}"
                            class="text-input" required minlength="8">
                 </div>
-                <button type="submit" class="btn-primary btn-full">登録してはじめる</button>
+                <button type="submit" class="btn-primary btn-full">{{ labels.auth.register_button }}</button>
             </form>
-            <p class="login-register-link">既にアカウントをお持ちの方は <a href="/login">ログイン</a></p>
+            <p class="login-register-link">{{ labels.auth.register_to_login }} <a href="/login">{{ labels.auth.login }}</a></p>
+        </div>
+        <div class="philosophy-card">
+            <p class="philosophy-catchcopy">{{ labels.philosophy.register_catchcopy }}</p>
+            <p class="philosophy-text">
+                {{ labels.philosophy.register_line1 }}<br>
+                {{ labels.philosophy.register_line2 }}<br>
+                {{ labels.philosophy.register_line3 }}
+            </p>
+            <p class="philosophy-text">
+                {{ labels.philosophy.register_line4 }}<br>
+                {{ labels.philosophy.register_line5 }}
+            </p>
         </div>
     </div>
 </body>

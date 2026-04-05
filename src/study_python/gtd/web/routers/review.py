@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.review import ReviewLogic
 from study_python.gtd.models import Tag
@@ -16,6 +13,7 @@ from study_python.gtd.web.dependencies import (
     require_auth,
     validate_item_id,
 )
+from study_python.gtd.web.template_engine import templates
 
 
 router = APIRouter(
@@ -23,7 +21,6 @@ router = APIRouter(
     tags=["review"],
     dependencies=[Depends(require_auth)],
 )
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 
 def _get_review_context(request: Request, repo: DbGtdRepository) -> dict[str, object]:

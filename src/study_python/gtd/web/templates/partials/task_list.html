@@ -30,7 +30,7 @@
     </form>
     {% endif %}
     {% if task.importance is not none and task.urgency is not none %}
-    <span class="score-badge">重{{ task.importance }} 緊{{ task.urgency }}</span>
+    <span class="score-badge">{{ labels.execution.score_importance_short }}{{ task.importance }} {{ labels.execution.score_urgency_short }}{{ task.urgency }}</span>
     {% endif %}
     {% if task.id in statuses_map %}
     <form hx-post="/execution/{{ task.id }}/status" hx-target="#task-list" hx-swap="innerHTML" style="display:inline">
@@ -46,7 +46,7 @@
 {% endfor %}
 {% if not tasks %}
 <div class="flow-message">
-    <span class="flow-message-text">実行するタスクはありません</span>
-    <a href="/inbox" class="flow-message-link">→ 新しく書き出す</a>
+    <span class="flow-message-text">{{ labels.execution.empty_message }}</span>
+    <a href="/inbox" class="flow-message-link">{{ labels.execution.empty_link }}</a>
 </div>
 {% endif %}

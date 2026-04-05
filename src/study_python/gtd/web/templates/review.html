@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-container">
-    <h2 class="page-title">見直し</h2>
-    <p class="page-desc">完了タスクとプロジェクトを振り返り、整理しましょう</p>
-    <p class="muted-text">完了: {{ completed_count }} 件  プロジェクト: {{ project_count }} 件</p>
+    <h2 class="page-title">{{ labels.review.title }}</h2>
+    <p class="page-desc">{{ labels.review.description }}</p>
+    <p class="muted-text">{{ labels.review.completed_label }} {{ completed_count }} {{ labels.review.count_suffix }}  {{ labels.review.project_label }} {{ project_count }} {{ labels.review.count_suffix }}</p>
     <div id="plan-area"></div>
     <div id="item-list">
         {% set page = "review" %}

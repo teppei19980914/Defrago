@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.execution import ExecutionLogic
 from study_python.gtd.models import get_status_enum_for_tag
@@ -16,6 +13,8 @@ from study_python.gtd.web.dependencies import (
     require_auth,
     validate_item_id,
 )
+from study_python.gtd.web.labels import load_labels
+from study_python.gtd.web.template_engine import templates
 
 
 router = APIRouter(
@@ -23,22 +22,10 @@ router = APIRouter(
     tags=["execution"],
     dependencies=[Depends(require_auth)],
 )
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
-TAG_DISPLAY = {
-    "delegation": "依頼",
-    "calendar": "カレンダー",
-    "do_now": "即実行",
-    "task": "タスク",
-}
-
-STATUS_DISPLAY = {
-    "not_started": "未着手",
-    "waiting": "連絡待ち",
-    "registered": "カレンダー登録済み",
-    "in_progress": "実施中",
-    "done": "完了",
-}
+_labels = load_labels()
+TAG_DISPLAY = _labels["execution"]["tags"]
+STATUS_DISPLAY = _labels["execution"]["statuses"]
 
 
 def _sort_tasks_by_project(tasks: list) -> list:

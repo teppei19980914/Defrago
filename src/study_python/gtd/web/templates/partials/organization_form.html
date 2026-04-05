@@ -1,44 +1,44 @@
 {% if current %}
-<p class="muted-text">{{ total }} 件の未整理タスク</p>
+<p class="muted-text">{{ total }} {{ labels.organization.count_suffix }}</p>
 <div class="item-display">{{ current.title }}</div>
 <form hx-post="/organization/set_scores" hx-target="#organization-area" hx-swap="innerHTML">
     <input type="hidden" name="item_id" value="{{ current.id }}">
     <div class="slider-group">
-        <label class="form-label">重要度: <span id="imp-val">5</span></label>
+        <label class="form-label">{{ labels.organization.importance_label }} <span id="imp-val">5</span></label>
         <input type="range" name="importance" min="1" max="10" value="5"
                class="slider" oninput="document.getElementById('imp-val').textContent=this.value">
     </div>
     <div class="slider-group">
-        <label class="form-label">緊急度: <span id="urg-val">5</span></label>
+        <label class="form-label">{{ labels.organization.urgency_label }} <span id="urg-val">5</span></label>
         <input type="range" name="urgency" min="1" max="10" value="5"
                class="slider" oninput="document.getElementById('urg-val').textContent=this.value">
     </div>
-    <button type="submit" class="btn-primary">設定</button>
+    <button type="submit" class="btn-primary">{{ labels.organization.submit_button }}</button>
 </form>
 {% else %}
 <div class="flow-message">
-    <span class="flow-message-text">すべてのタスクを整理しました</span>
-    <a href="/execution" class="flow-message-link">→ 実行へ進む</a>
+    <span class="flow-message-text">{{ labels.organization.done_message }}</span>
+    <a href="/execution" class="flow-message-link">{{ labels.organization.done_link }}</a>
 </div>
 {% endif %}
 
 {% if quadrants %}
-<h3 class="section-title" style="margin-top: 24px;">マトリクス</h3>
+<h3 class="section-title" style="margin-top: 24px;">{{ labels.organization.matrix_label }}</h3>
 <div class="matrix-grid">
     <div class="matrix-cell q2">
-        <div class="matrix-label">Q2: 効果性</div>
+        <div class="matrix-label">{{ labels.organization.q2_short }}</div>
         {% for item in quadrants.q2_not_urgent_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
     <div class="matrix-cell q1">
-        <div class="matrix-label">Q1: 必須</div>
+        <div class="matrix-label">{{ labels.organization.q1_short }}</div>
         {% for item in quadrants.q1_urgent_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
     <div class="matrix-cell q4">
-        <div class="matrix-label">Q4: 浪費</div>
+        <div class="matrix-label">{{ labels.organization.q4_short }}</div>
         {% for item in quadrants.q4_not_urgent_not_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
     <div class="matrix-cell q3">
-        <div class="matrix-label">Q3: 錯覚</div>
+        <div class="matrix-label">{{ labels.organization.q3_short }}</div>
         {% for item in quadrants.q3_urgent_not_important %}<div class="matrix-item">{{ item.title }}</div>{% endfor %}
     </div>
 </div>

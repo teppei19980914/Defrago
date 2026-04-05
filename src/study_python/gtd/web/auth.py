@@ -14,6 +14,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 
 from study_python.gtd.web.db_models import UserRow
+from study_python.gtd.web.labels import load_labels
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def validate_username(username: str) -> str | None:
         エラーメッセージ。問題なければNone。
     """
     if not USERNAME_PATTERN.match(username):
-        return "ユーザー名は英数字・アンダースコア・ハイフンで3〜50文字にしてください"
+        return load_labels()["auth"]["error_username_format"]
     return None
 
 
@@ -65,7 +66,7 @@ def validate_password(password: str) -> str | None:
         エラーメッセージ。問題なければNone。
     """
     if len(password) < MIN_PASSWORD_LENGTH:
-        return f"パスワードは{MIN_PASSWORD_LENGTH}文字以上にしてください"
+        return load_labels()["auth"]["error_password_length"]
     return None
 
 

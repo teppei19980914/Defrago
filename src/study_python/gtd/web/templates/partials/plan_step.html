@@ -1,124 +1,119 @@
 {% if step == 1 %}
-{# Step 1-2: 目的の定義 & 望ましい結果 #}
 <div class="plan-wizard">
     <div class="plan-header">
         <span class="plan-project-title">{{ item.title }}</span>
-        <span class="plan-step-badge">Step 1-2 / 6</span>
+        <span class="plan-step-badge">{{ labels.plan.step12_badge }}</span>
     </div>
-    <h3 class="plan-step-title">目的の定義 & 望ましい結果</h3>
-    <p class="muted-text">目的が明確であれば判断基準が自動的に定まり、判断の都度迷わなくなります。</p>
+    <h3 class="plan-step-title">{{ labels.plan.step12_title }}</h3>
+    <p class="muted-text">{{ labels.plan.step12_desc }}</p>
 
     <form hx-post="/review/{{ item.id }}/plan/purpose" hx-target="#plan-area" hx-swap="innerHTML">
         <div class="form-group">
-            <label class="form-label required">このプロジェクトの目的は何ですか？</label>
-            <p class="form-hint">例: スピード優先か品質優先か、何を犠牲にしないかなどの判断基準が明確になる表現で。</p>
+            <label class="form-label required">{{ labels.plan.purpose_label }}</label>
+            <p class="form-hint">{{ labels.plan.purpose_hint }}</p>
             <textarea name="purpose" rows="3" class="text-input text-area-sm"
-                      placeholder="例: 新規顧客の問い合わせ対応を効率化し、応答時間を50%短縮する">{{ item.project_purpose }}</textarea>
+                      placeholder="{{ labels.plan.purpose_placeholder }}">{{ item.project_purpose }}</textarea>
         </div>
 
         <div class="form-group">
-            <label class="form-label required">望ましい結果（完了した状態）を具体的に記述してください</label>
-            <p class="form-hint">完了した状態を具体的な名詞や動詞で表現し、自他ともにイメージできる状態を目指します。</p>
+            <label class="form-label required">{{ labels.plan.outcome_label }}</label>
+            <p class="form-hint">{{ labels.plan.outcome_hint }}</p>
             <textarea name="outcome" rows="3" class="text-input text-area-sm"
-                      placeholder="例: FAQページが公開され、問い合わせ件数が月100件→50件に減少している">{{ item.project_outcome }}</textarea>
+                      placeholder="{{ labels.plan.outcome_placeholder }}">{{ item.project_outcome }}</textarea>
         </div>
 
         <div class="btn-row">
-            <button type="submit" class="btn-primary">次へ → ブレインストーミング</button>
+            <button type="submit" class="btn-primary">{{ labels.plan.next_brainstorm }}</button>
             <button hx-get="/review" hx-target="main" hx-swap="innerHTML" hx-push-url="true"
-                    type="button" class="btn-secondary">戻る</button>
+                    type="button" class="btn-secondary">{{ labels.plan.back }}</button>
         </div>
     </form>
 </div>
 
 {% elif step == 3 %}
-{# Step 3: ブレインストーミング #}
 <div class="plan-wizard">
     <div class="plan-header">
         <span class="plan-project-title">{{ item.title }}</span>
-        <span class="plan-step-badge">Step 3 / 6</span>
+        <span class="plan-step-badge">{{ labels.plan.step3_badge }}</span>
     </div>
-    <h3 class="plan-step-title">ブレインストーミング</h3>
-    <p class="muted-text">このプロジェクトを完了するために関係するものをすべて洗い出してください。判断や否定はせず、頭の中に浮かぶものをすべて書き出すことが重要です。</p>
+    <h3 class="plan-step-title">{{ labels.plan.step3_title }}</h3>
+    <p class="muted-text">{{ labels.plan.step3_desc }}</p>
 
     {% if item.project_purpose %}
     <div class="plan-context">
-        <strong>目的:</strong> {{ item.project_purpose }}<br>
-        <strong>望ましい結果:</strong> {{ item.project_outcome }}
+        <strong>{{ labels.plan.purpose_prefix }}</strong> {{ item.project_purpose }}<br>
+        <strong>{{ labels.plan.outcome_prefix }}</strong> {{ item.project_outcome }}
     </div>
     {% endif %}
 
     <form hx-post="/review/{{ item.id }}/plan/brainstorm" hx-target="#plan-area" hx-swap="innerHTML">
         <div class="form-group">
-            <label class="form-label required">関連する要素を1行1つずつ入力</label>
-            <p class="form-hint">タスク、調査事項、必要な資料、関係者、懸念点など何でもOK。順番は気にしないでください。</p>
-            <textarea name="brainstorm_items" rows="10" class="text-input text-area-sm"
-                      placeholder="例:&#10;競合のFAQページを調査&#10;よくある質問を社内ヒアリング&#10;FAQ記事を作成&#10;公開前レビュー&#10;アクセス解析の設定">{% for bi in brainstorm_items %}{{ bi }}
+            <label class="form-label required">{{ labels.plan.brainstorm_label }}</label>
+            <p class="form-hint">{{ labels.plan.brainstorm_hint }}</p>
+            <textarea name="brainstorm_items" rows="10" class="text-input text-area-sm">{% for bi in brainstorm_items %}{{ bi }}
 {% endfor %}</textarea>
         </div>
 
         <div class="btn-row">
-            <button type="submit" class="btn-primary">次へ → 組織化</button>
+            <button type="submit" class="btn-primary">{{ labels.plan.next_organize }}</button>
             <button hx-get="/review/{{ item.id }}/plan?step=1" hx-target="#plan-area" hx-swap="innerHTML"
-                    type="button" class="btn-secondary">← 戻る</button>
+                    type="button" class="btn-secondary">{{ labels.plan.back_prev }}</button>
         </div>
     </form>
 </div>
 
 {% elif step == 4 %}
-{# Step 4-5: 組織化 & サポート資料 #}
 <div class="plan-wizard">
     <div class="plan-header">
         <span class="plan-project-title">{{ item.title }}</span>
-        <span class="plan-step-badge">Step 4-5 / 6</span>
+        <span class="plan-step-badge">{{ labels.plan.step45_badge }}</span>
     </div>
-    <h3 class="plan-step-title">組織化 & サポート資料</h3>
-    <p class="muted-text">ブレインストーミングで出た要素を整理し、構造化します。不要なものは削除し、期限があれば設定してください。</p>
+    <h3 class="plan-step-title">{{ labels.plan.step45_title }}</h3>
+    <p class="muted-text">{{ labels.plan.step45_desc }}</p>
 
     <form hx-post="/review/{{ item.id }}/plan/organize" hx-target="#plan-area" hx-swap="innerHTML">
         <div class="form-group">
-            <label class="form-label">タスクの整理</label>
+            <label class="form-label">{{ labels.plan.organize_label }}</label>
             <div class="organize-list">
                 {% for bi in brainstorm_items %}
                 <div class="organize-row">
                     <span class="organize-index">#{{ loop.index }}</span>
                     <input type="text" name="task_title" value="{{ bi }}" class="text-input organize-title">
-                    <input type="date" name="task_deadline" class="text-input organize-deadline" placeholder="期限">
+                    <input type="date" name="task_deadline" class="text-input organize-deadline">
                 </div>
                 {% endfor %}
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">プロジェクトサポート資料の置き場所</label>
-            <p class="form-hint">関連する資料やメモ、調査結果の保管場所を記入してください。</p>
+            <label class="form-label">{{ labels.plan.support_label }}</label>
+            <p class="form-hint">{{ labels.plan.support_hint }}</p>
             <input type="text" name="support_location" value="{{ item.project_support_location }}"
-                   class="text-input" placeholder="例: Google Drive の「プロジェクトX」フォルダ">
+                   class="text-input" placeholder="{{ labels.plan.support_placeholder }}">
         </div>
 
         <div class="btn-row">
-            <button type="submit" class="btn-primary">次へ → ネクストアクション</button>
+            <button type="submit" class="btn-primary">{{ labels.plan.next_action }}</button>
             <button hx-get="/review/{{ item.id }}/plan?step=1" hx-target="#plan-area" hx-swap="innerHTML"
-                    type="button" class="btn-secondary">← 最初に戻る</button>
+                    type="button" class="btn-secondary">{{ labels.plan.back_first }}</button>
         </div>
     </form>
 </div>
 
 {% elif step == 6 %}
-{# Step 6: ネクストアクションの特定 & 実行 #}
 <div class="plan-wizard">
     <div class="plan-header">
         <span class="plan-project-title">{{ item.title }}</span>
-        <span class="plan-step-badge">Step 6 / 6</span>
+        <span class="plan-step-badge">{{ labels.plan.step6_badge }}</span>
     </div>
-    <h3 class="plan-step-title">ネクストアクションの特定</h3>
-    <p class="muted-text">今すぐ実行可能な最初の具体的行動にチェックを入れてください。ここが機能しないとプロジェクトは動きません。</p>
+    <h3 class="plan-step-title">{{ labels.plan.step6_title }}</h3>
+    <p class="muted-text">{{ labels.plan.step6_desc }}</p>
 
     {% if item.project_purpose %}
     <div class="plan-context">
-        <strong>目的:</strong> {{ item.project_purpose }}<br>
-        <strong>望ましい結果:</strong> {{ item.project_outcome }}
-        {% if item.project_support_location %}<br><strong>資料:</strong> {{ item.project_support_location }}{% endif %}
+        <strong>{{ labels.plan.purpose_prefix }}</strong> {{ item.project_purpose }}<br>
+        <strong>{{ labels.plan.outcome_prefix }}</strong> {{ item.project_outcome }}
+        {% if item.project_support_location %}<br><strong>{{ labels.plan.support_prefix }}</strong> {{ item.project_support_location }}{% endif %}
     </div>
     {% endif %}
 
@@ -135,7 +130,7 @@
                     <span class="next-action-title">{{ bi }}</span>
                     <input type="hidden" name="task_deadline" value="{% if deadlines and loop.index0 < deadlines|length %}{{ deadlines[loop.index0] }}{% endif %}">
                     {% if deadlines and loop.index0 < deadlines|length and deadlines[loop.index0] %}
-                    <span class="next-action-deadline">📅 {{ deadlines[loop.index0] }}</span>
+                    <span class="next-action-deadline">&#128197; {{ deadlines[loop.index0] }}</span>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -143,9 +138,9 @@
         </div>
 
         <div class="btn-row">
-            <button type="submit" class="btn-primary">計画を実行 → サブタスクを生成</button>
+            <button type="submit" class="btn-primary">{{ labels.plan.execute_button }}</button>
             <button hx-get="/review/{{ item.id }}/plan?step=1" hx-target="#plan-area" hx-swap="innerHTML"
-                    type="button" class="btn-secondary">← 最初に戻る</button>
+                    type="button" class="btn-secondary">{{ labels.plan.back_first }}</button>
         </div>
     </form>
 </div>

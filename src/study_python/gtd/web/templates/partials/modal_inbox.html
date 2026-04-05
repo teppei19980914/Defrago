@@ -1,0 +1,40 @@
+{% if notifications %}
+<div class="inbox-actions">
+    <button class="btn-sm btn-secondary"
+            hx-post="/api/iconbar/notifications/read_all"
+            hx-target="#modal-inbox .modal-body" hx-swap="innerHTML">&#10003; {{ labels.modal_inbox.read_all }}</button>
+</div>
+<div class="inbox-list">
+    {% for n in notifications %}
+    <div class="inbox-item {% if not n.is_read %}inbox-unread{% endif %}"
+         hx-get="/api/iconbar/notifications/{{ n.id }}"
+         hx-target="#modal-inbox .modal-body" hx-swap="innerHTML"
+         style="cursor: pointer;">
+        <div class="inbox-item-icon">
+            {% if n.notification_type == 'achievement' %}&#127942;{% elif n.notification_type == 'system' %}&#128227;{% else %}&#128276;{% endif %}
+        </div>
+        <div class="inbox-item-content">
+            <strong>{{ n.title }}</strong>
+            <p>{{ n.message[:50] }}{% if n.message|length > 50 %}...{% endif %}</p>
+        </div>
+        <div class="inbox-item-date">{{ n.created_at[5:10] | replace("-", "/") }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="modal-empty">
+    <span class="modal-empty-icon">&#128236;</span>
+    <p>{{ labels.modal_inbox.empty_message }}</p>
+</div>
+{% endif %}
+<script>
+document.body.addEventListener('htmx:afterRequest', function refreshBadge(e) {
+    if (e.detail.pathInfo && e.detail.pathInfo.requestPath &&
+        e.detail.pathInfo.requestPath.indexOf('/api/iconbar/notifications') !== -1) {
+        fetchAuth('/api/iconbar/badge_count').then(function(html) {
+            var el = document.getElementById('inbox-badge');
+            if (el) el.innerHTML = html;
+        });
+    }
+}, {once: true});
+</script>

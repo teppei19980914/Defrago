@@ -1,0 +1,35 @@
+<div class="achievement-stats">
+    <div class="achievement-stat">
+        <span class="achievement-stat-icon">&#9889;</span>
+        <div>
+            <span class="achievement-stat-label">{{ labels.modal_achievements.stat_active }}</span>
+            <span class="achievement-stat-value">{{ active_count }}</span>
+        </div>
+    </div>
+    <div class="achievement-stat">
+        <span class="achievement-stat-icon">&#9989;</span>
+        <div>
+            <span class="achievement-stat-label">{{ labels.modal_achievements.stat_completed }}</span>
+            <span class="achievement-stat-value">{{ done_count }}</span>
+        </div>
+    </div>
+    <div class="achievement-stat">
+        <span class="achievement-stat-icon">&#128203;</span>
+        <div>
+            <span class="achievement-stat-label">{{ labels.modal_achievements.stat_total }}</span>
+            <span class="achievement-stat-value">{{ total_count }}</span>
+        </div>
+    </div>
+</div>
+
+{% if badges %}
+<div class="achievement-badges">
+    {% for badge in badges %}
+    <div class="achievement-badge">&#10024; {{ badge }}</div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="achievement-next">
+    <p class="muted-text">{{ labels.modal_achievements.first_milestone }}</p>
+</div>
+{% endif %}

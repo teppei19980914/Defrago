@@ -3,36 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindFlow GTD</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=20260326">
+    <title>{{ labels.app.name }} GTD</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260405">
     <script src="/static/js/htmx.min.js?v=20260326"></script>
 </head>
 <body hx-boost="true">
     <div class="app-layout">
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h1 class="app-title">MindFlow</h1>
+                <h1 class="app-title">{{ labels.app.name }}</h1>
             </div>
             <div class="nav-links">
-                <a href="/" class="nav-btn {% if active_page == '/' %}active{% endif %}">ダッシュボード</a>
-                <a href="/inbox" class="nav-btn {% if active_page == '/inbox' %}active{% endif %}">収集</a>
-                <a href="/clarification" class="nav-btn {% if active_page == '/clarification' %}active{% endif %}">明確化</a>
-                <a href="/organization" class="nav-btn {% if active_page == '/organization' %}active{% endif %}">整理</a>
-                <a href="/execution" class="nav-btn {% if active_page == '/execution' %}active{% endif %}">実行</a>
-                <a href="/review" class="nav-btn {% if active_page == '/review' %}active{% endif %}">見直し</a>
+                <a href="/" class="nav-btn {% if active_page == '/' %}active{% endif %}">{{ labels.nav.dashboard }}</a>
+                <a href="/inbox" class="nav-btn {% if active_page == '/inbox' %}active{% endif %}">{{ labels.nav.inbox }}</a>
+                <a href="/clarification" class="nav-btn {% if active_page == '/clarification' %}active{% endif %}">{{ labels.nav.clarification }}</a>
+                <a href="/organization" class="nav-btn {% if active_page == '/organization' %}active{% endif %}">{{ labels.nav.organization }}</a>
+                <a href="/execution" class="nav-btn {% if active_page == '/execution' %}active{% endif %}">{{ labels.nav.execution }}</a>
+                <a href="/review" class="nav-btn {% if active_page == '/review' %}active{% endif %}">{{ labels.nav.review }}</a>
             </div>
             <div class="sidebar-footer">
-                <a href="/settings" class="nav-btn nav-btn-sub {% if active_page == '/settings' %}active{% endif %}">&#9881; 設定</a>
-                <a href="/logout" class="nav-btn nav-btn-sub">ログアウト</a>
+                <a href="/settings" class="nav-btn nav-btn-sub {% if active_page == '/settings' %}active{% endif %}">&#9881; {{ labels.nav.settings }}</a>
+                <a href="/logout" class="nav-btn nav-btn-sub">{{ labels.nav.logout }}</a>
             </div>
         </nav>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
         <main class="content">
-            <button class="hamburger" id="hamburger-btn">&#9776;</button>
+            <div class="topbar">
+                <button class="hamburger" id="hamburger-btn">&#9776;</button>
+                <div class="icon-bar">
+                    <button class="icon-btn" onclick="openModal('modal-tutorial')" title="{{ labels.iconbar.tutorial_tooltip }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </button>
+                    <button class="icon-btn" onclick="openModal('modal-help')" title="{{ labels.iconbar.help_tooltip }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </button>
+                    <button class="icon-btn" onclick="openModalAndLoad('modal-inbox', '/api/iconbar/notifications')" title="{{ labels.iconbar.inbox_tooltip }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                        <span id="inbox-badge"></span>
+                    </button>
+                    <button class="icon-btn" onclick="openModalAndLoad('modal-contact', '/api/iconbar/contact')" title="{{ labels.iconbar.contact_tooltip }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </button>
+                    <button class="icon-btn" onclick="openModalAndLoad('modal-achievements', '/api/iconbar/achievements')" title="{{ labels.iconbar.achievements_tooltip }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                    </button>
+                </div>
+            </div>
             {% block content %}{% endblock %}
         </main>
     </div>
+
+    <!-- Modals -->
+    <div id="modal-tutorial" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span class="modal-title">&#128214; {{ labels.iconbar.tutorial_tooltip }}</span>
+                <button class="modal-close" onclick="closeModal('modal-tutorial')">&times;</button>
+            </div>
+            <div class="modal-body">
+                {% include "partials/modal_tutorial.html" %}
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-help" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span class="modal-title">&#10067; {{ labels.iconbar.help_tooltip }}</span>
+                <button class="modal-close" onclick="closeModal('modal-help')">&times;</button>
+            </div>
+            <div class="modal-body">
+                {% include "partials/modal_help.html" %}
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-inbox" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span class="modal-title">&#128236; {{ labels.modal_inbox.title }}</span>
+                <button class="modal-close" onclick="closeModal('modal-inbox')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="muted-text">{{ labels.iconbar.loading }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-contact" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span class="modal-title">&#9993; {{ labels.modal_contact.title }}</span>
+                <button class="modal-close" onclick="closeModal('modal-contact')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="muted-text">{{ labels.iconbar.loading }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-achievements" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span class="modal-title">&#127942; {{ labels.modal_achievements.title }}</span>
+                <button class="modal-close" onclick="closeModal('modal-achievements')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="muted-text">{{ labels.iconbar.loading }}</p>
+            </div>
+        </div>
+    </div>
+
     <script>
     (function() {
         var sidebar = document.getElementById('sidebar');
@@ -46,6 +128,35 @@
             link.addEventListener('click', close);
         });
     })();
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+    function closeModalOnOverlay(e) {
+        if (e.target === e.currentTarget) e.currentTarget.classList.remove('active');
+    }
+    function fetchAuth(url) {
+        return fetch(url, {credentials: 'same-origin'}).then(function(r) {
+            if (!r.ok) return '';
+            return r.text();
+        }).catch(function() { return ''; });
+    }
+    function openModalAndLoad(modalId, url) {
+        openModal(modalId);
+        var body = document.querySelector('#' + modalId + ' .modal-body');
+        fetchAuth(url).then(function(html) {
+            if (html) {
+                body.innerHTML = html;
+                if (window.htmx) htmx.process(body);
+            }
+        });
+    }
+    fetchAuth('/api/iconbar/badge_count').then(function(html) {
+        var el = document.getElementById('inbox-badge');
+        if (el && html) el.innerHTML = html;
+    });
     </script>
 </body>
 </html>

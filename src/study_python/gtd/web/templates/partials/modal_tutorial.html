@@ -1,0 +1,83 @@
+<div class="modal-tabs">
+    <button class="modal-tab active" onclick="switchTab(this, 'tab-overview')">{{ labels.modal_tutorial.tab_overview }}</button>
+    <button class="modal-tab" onclick="switchTab(this, 'tab-howto')">{{ labels.modal_tutorial.tab_howto }}</button>
+</div>
+
+<div id="tab-overview" class="tab-content active">
+    <div class="tutorial-flow">
+        <div class="tutorial-step">
+            <span class="tutorial-icon">&#128229;</span>
+            <div>
+                <strong>{{ labels.modal_tutorial.step_inbox }}</strong>
+                <p>{{ labels.modal_tutorial.step_inbox_desc }}</p>
+            </div>
+        </div>
+        <div class="tutorial-arrow">&#8595;</div>
+        <div class="tutorial-step">
+            <span class="tutorial-icon">&#128270;</span>
+            <div>
+                <strong>{{ labels.modal_tutorial.step_clarify }}</strong>
+                <p>{{ labels.modal_tutorial.step_clarify_desc }}</p>
+            </div>
+        </div>
+        <div class="tutorial-arrow">&#8595;</div>
+        <div class="tutorial-step">
+            <span class="tutorial-icon">&#128202;</span>
+            <div>
+                <strong>{{ labels.modal_tutorial.step_organize }}</strong>
+                <p>{{ labels.modal_tutorial.step_organize_desc }}</p>
+            </div>
+        </div>
+        <div class="tutorial-arrow">&#8595;</div>
+        <div class="tutorial-step">
+            <span class="tutorial-icon">&#9889;</span>
+            <div>
+                <strong>{{ labels.modal_tutorial.step_execute }}</strong>
+                <p>{{ labels.modal_tutorial.step_execute_desc }}</p>
+            </div>
+        </div>
+        <div class="tutorial-arrow">&#8595;</div>
+        <div class="tutorial-step">
+            <span class="tutorial-icon">&#128260;</span>
+            <div>
+                <strong>{{ labels.modal_tutorial.step_review }}</strong>
+                <p>{{ labels.modal_tutorial.step_review_desc }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-howto" class="tab-content">
+    <div class="howto-list">
+        <div class="howto-item">
+            <strong>{{ labels.modal_tutorial.howto1_title }}</strong>
+            <p>{{ labels.modal_tutorial.howto1_desc }}</p>
+        </div>
+        <div class="howto-item">
+            <strong>{{ labels.modal_tutorial.howto2_title }}</strong>
+            <p>{{ labels.modal_tutorial.howto2_desc }}</p>
+        </div>
+        <div class="howto-item">
+            <strong>{{ labels.modal_tutorial.howto3_title }}</strong>
+            <p>{{ labels.modal_tutorial.howto3_desc }}</p>
+        </div>
+        <div class="howto-item">
+            <strong>{{ labels.modal_tutorial.howto4_title }}</strong>
+            <p>{{ labels.modal_tutorial.howto4_desc }}</p>
+        </div>
+        <div class="howto-item">
+            <strong>{{ labels.modal_tutorial.howto5_title }}</strong>
+            <p>{{ labels.modal_tutorial.howto5_desc }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(btn, tabId) {
+    var parent = btn.closest('.modal-body');
+    parent.querySelectorAll('.modal-tab').forEach(function(t) { t.classList.remove('active'); });
+    parent.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+</script>

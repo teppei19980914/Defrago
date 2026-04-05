@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.clarification import ClarificationLogic
 from study_python.gtd.logic.collection import CollectionLogic
@@ -15,10 +12,11 @@ from study_python.gtd.logic.organization import OrganizationLogic
 from study_python.gtd.logic.review import ReviewLogic
 from study_python.gtd.web.db_repository import DbGtdRepository
 from study_python.gtd.web.dependencies import get_repository, require_auth
+from study_python.gtd.web.labels import load_labels
+from study_python.gtd.web.template_engine import templates
 
 
 router = APIRouter(tags=["dashboard"], dependencies=[Depends(require_auth)])
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 
 def _get_next_action(
@@ -33,52 +31,48 @@ def _get_next_action(
     Returns:
         message(表示テキスト), url(遷移先), label(ボタンラベル)を持つ辞書。
     """
-    # 1. Inboxに未処理アイテムがある → 収集フェーズへ
+    L = load_labels()["dashboard"]
+
     inbox_items = collection.get_inbox_items()
     if inbox_items:
         return {
-            "message": f"{len(inbox_items)}件のアイテムが頭の中にあります",
+            "message": f"{len(inbox_items)}{L['guide_inbox']}",
             "url": "/inbox",
-            "label": "書き出す",
+            "label": L["guide_inbox_btn"],
         }
 
-    # 2. 明確化待ちアイテムがある → 明確化フェーズへ
     pending = clarification.get_pending_items()
     if pending:
         return {
-            "message": f"{len(pending)}件のアイテムを分類しましょう",
+            "message": f"{len(pending)}{L['guide_clarify']}",
             "url": "/clarification",
-            "label": "明確化する",
+            "label": L["guide_clarify_btn"],
         }
 
-    # 3. 整理待ちアイテムがある → 整理フェーズへ
     unorganized = organization.get_unorganized_tasks()
     if unorganized:
         return {
-            "message": f"{len(unorganized)}件のタスクに優先度を設定しましょう",
+            "message": f"{len(unorganized)}{L['guide_organize']}",
             "url": "/organization",
-            "label": "整理する",
+            "label": L["guide_organize_btn"],
         }
 
-    # 4. 見直し対象がある → 見直しフェーズへ
     review_items = review.get_review_items()
     if review_items:
         return {
-            "message": f"{len(review_items)}件の見直し対象があります",
+            "message": f"{len(review_items)}{L['guide_review']}",
             "url": "/review",
-            "label": "見直す",
+            "label": L["guide_review_btn"],
         }
 
-    # 5. 実行中タスクがある or すべて完了
     active = execution.get_active_tasks()
     if not active:
         return {
-            "message": "頭の中はクリアです。フロー状態を楽しみましょう！",
+            "message": L["guide_clear"],
             "url": "/inbox",
-            "label": "新しく書き出す",
+            "label": L["guide_clear_btn"],
         }
 
-    # Q1（重要かつ緊急）のタスクを優先表示
     q1_tasks = [
         t
         for t in active
@@ -88,11 +82,11 @@ def _get_next_action(
         and t.urgency > 5
     ]
     top_message = (
-        f"最優先: {q1_tasks[0].title}"
+        f"{L['guide_priority']}{q1_tasks[0].title}"
         if q1_tasks
-        else f"{len(active)}件のタスクがあります"
+        else f"{len(active)}{L['guide_tasks']}"
     )
-    return {"message": top_message, "url": "/execution", "label": "実行する"}
+    return {"message": top_message, "url": "/execution", "label": L["guide_exec_btn"]}
 
 
 @router.get("/", response_class=HTMLResponse)

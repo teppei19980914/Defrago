@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from study_python.gtd.web.auth import (
@@ -18,10 +16,11 @@ from study_python.gtd.web.auth import (
     verify_credentials,
 )
 from study_python.gtd.web.dependencies import get_db_session
+from study_python.gtd.web.labels import load_labels
+from study_python.gtd.web.template_engine import templates
 
 
 router = APIRouter(tags=["auth"])
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 _login_attempts: dict[str, list[float]] = defaultdict(list)
 _MAX_ATTEMPTS = 5
@@ -61,9 +60,7 @@ async def login(
         return templates.TemplateResponse(
             request,
             "login.html",
-            {
-                "error": "ログイン試行回数が上限に達しました。しばらく待ってから再試行してください。"
-            },
+            {"error": load_labels()["auth"]["error_rate_limit"]},
             status_code=429,
         )
 
@@ -83,7 +80,7 @@ async def login(
     return templates.TemplateResponse(
         request,
         "login.html",
-        {"error": "ユーザー名またはパスワードが正しくありません"},
+        {"error": load_labels()["auth"]["error_credentials"]},
         status_code=401,
     )
 
@@ -108,9 +105,7 @@ async def register(
         return templates.TemplateResponse(
             request,
             "register.html",
-            {
-                "error": "試行回数が上限に達しました。しばらく待ってから再試行してください。"
-            },
+            {"error": load_labels()["auth"]["error_register_rate_limit"]},
             status_code=429,
         )
 
@@ -136,7 +131,10 @@ async def register(
         return templates.TemplateResponse(
             request,
             "register.html",
-            {"error": "パスワードが一致しません", "username": username},
+            {
+                "error": load_labels()["auth"]["error_password_mismatch"],
+                "username": username,
+            },
         )
 
     user = register_user(db, username, password)
@@ -145,7 +143,10 @@ async def register(
         return templates.TemplateResponse(
             request,
             "register.html",
-            {"error": "このユーザー名は既に使用されています", "username": username},
+            {
+                "error": load_labels()["auth"]["error_username_taken"],
+                "username": username,
+            },
         )
 
     # 登録成功 → 自動ログイン

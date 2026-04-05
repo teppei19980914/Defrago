@@ -1,0 +1,60 @@
+<div class="modal-tabs">
+    <button class="modal-tab active" onclick="switchTab(this, 'tab-about')">{{ labels.modal_help.tab_about }}</button>
+    <button class="modal-tab" onclick="switchTab(this, 'tab-faq')">{{ labels.modal_help.tab_faq }}</button>
+</div>
+
+<div id="tab-about" class="tab-content active">
+    <div class="help-section">
+        <div class="help-item">
+            <span class="help-icon">&#128274;</span>
+            <div>
+                <strong>{{ labels.modal_help.security_title }}</strong>
+                <p>{{ labels.modal_help.security_desc }}</p>
+            </div>
+        </div>
+        <div class="help-item">
+            <span class="help-icon">&#9888;&#65039;</span>
+            <div>
+                <strong>{{ labels.modal_help.password_title }}</strong>
+                <p>{{ labels.modal_help.password_desc }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="help-actions">
+        <a href="/api/iconbar/releases" target="_blank" hx-boost="false" class="btn-sm btn-secondary help-update-btn">
+            &#128260; {{ labels.modal_help.update_button }}
+        </a>
+    </div>
+
+    <div class="help-developer">
+        <strong>&#10084;&#65039; {{ labels.modal_help.developer_title }}</strong>
+        <p>{{ labels.modal_help.developer_line1 }}</p>
+        <p>{{ labels.modal_help.developer_line2 }}</p>
+    </div>
+</div>
+
+<div id="tab-faq" class="tab-content">
+    <div class="faq-list">
+        <details class="faq-item">
+            <summary>{{ labels.modal_help.faq_gtd_q }}</summary>
+            <p>{{ labels.modal_help.faq_gtd_a }}</p>
+        </details>
+        <details class="faq-item">
+            <summary>{{ labels.modal_help.faq_inbox_q }}</summary>
+            <p>{{ labels.modal_help.faq_inbox_a }}</p>
+        </details>
+        <details class="faq-item">
+            <summary>{{ labels.modal_help.faq_project_q }}</summary>
+            <p>{{ labels.modal_help.faq_project_a }}</p>
+        </details>
+        <details class="faq-item">
+            <summary>{{ labels.modal_help.faq_priority_q }}</summary>
+            <p>{{ labels.modal_help.faq_priority_a }}</p>
+        </details>
+        <details class="faq-item">
+            <summary>{{ labels.modal_help.faq_security_q }}</summary>
+            <p>{{ labels.modal_help.faq_security_a }}</p>
+        </details>
+    </div>
+</div>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-container">
-    <h2 class="page-title">ダッシュボード</h2>
+    <h2 class="page-title">{{ labels.dashboard.title }}</h2>
 
     <!-- 次のアクション（最重要要素） -->
     <div class="next-action-card">
@@ -12,48 +12,48 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-value">{{ inbox_count }}</div>
-            <div class="stat-label">Inbox</div>
+            <div class="stat-label">{{ labels.dashboard.stat_inbox }}</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">{{ active_count }}</div>
-            <div class="stat-label">実行中タスク</div>
+            <div class="stat-label">{{ labels.dashboard.stat_active }}</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">{{ completed_count }}</div>
-            <div class="stat-label">完了</div>
+            <div class="stat-label">{{ labels.dashboard.stat_completed }}</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">{{ total_count }}</div>
-            <div class="stat-label">合計</div>
+            <div class="stat-label">{{ labels.dashboard.stat_total }}</div>
         </div>
     </div>
 
-    <h3 class="section-title">重要度 × 緊急度マトリクス</h3>
+    <h3 class="section-title">{{ labels.dashboard.matrix_title }}</h3>
     <div class="matrix-grid">
         <div class="matrix-cell q2">
-            <div class="matrix-label">Q2: 効果性の領域</div>
-            <div class="matrix-desc">重要だが緊急でない</div>
+            <div class="matrix-label">{{ labels.dashboard.q2_label }}</div>
+            <div class="matrix-desc">{{ labels.dashboard.q2_desc }}</div>
             {% for item in quadrants.q2_not_urgent_important %}
             <div class="matrix-item">{{ item.title }}</div>
             {% endfor %}
         </div>
         <div class="matrix-cell q1">
-            <div class="matrix-label">Q1: 必須の領域</div>
-            <div class="matrix-desc">重要かつ緊急</div>
+            <div class="matrix-label">{{ labels.dashboard.q1_label }}</div>
+            <div class="matrix-desc">{{ labels.dashboard.q1_desc }}</div>
             {% for item in quadrants.q1_urgent_important %}
             <div class="matrix-item">{{ item.title }}</div>
             {% endfor %}
         </div>
         <div class="matrix-cell q4">
-            <div class="matrix-label">Q4: 浪費の領域</div>
-            <div class="matrix-desc">重要でも緊急でもない</div>
+            <div class="matrix-label">{{ labels.dashboard.q4_label }}</div>
+            <div class="matrix-desc">{{ labels.dashboard.q4_desc }}</div>
             {% for item in quadrants.q4_not_urgent_not_important %}
             <div class="matrix-item">{{ item.title }}</div>
             {% endfor %}
         </div>
         <div class="matrix-cell q3">
-            <div class="matrix-label">Q3: 錯覚の領域</div>
-            <div class="matrix-desc">緊急だが重要でない</div>
+            <div class="matrix-label">{{ labels.dashboard.q3_label }}</div>
+            <div class="matrix-desc">{{ labels.dashboard.q3_desc }}</div>
             {% for item in quadrants.q3_urgent_not_important %}
             <div class="matrix-item">{{ item.title }}</div>
             {% endfor %}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ labels.app.name }} - {{ labels.releases.page_title }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="releases-page">
+        <div class="releases-header">
+            <h1>{{ labels.releases.page_title }}</h1>
+            <p class="muted-text">{{ labels.releases.current_version_prefix }}{{ current_version }}</p>
+        </div>
+
+        <div class="releases-list">
+            {% for release in releases %}
+            <div class="release-card">
+                <div class="release-card-header">
+                    <span class="release-version-badge">v{{ release.version }}</span>
+                    <span class="release-date">{{ release.date }}</span>
+                    {% if loop.first %}
+                    <span class="release-latest-badge">{{ labels.releases.latest_badge }}</span>
+                    {% endif %}
+                </div>
+                <div class="release-changes">
+                    {% for change in release.changes %}
+                    <div class="release-change-item">
+                        <span class="release-check">&#10003;</span>
+                        <span>{{ change }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -17,12 +17,12 @@
         <span class="card-title">{{ item.title }}</span>
         {% if item.tag %}
         <span class="tag-badge tag-{{ item.tag.value }}">
-            {{ {"delegation": "依頼", "calendar": "カレンダー", "project": "プロジェクト", "do_now": "即実行", "task": "タスク"}.get(item.tag.value, item.tag.value) }}
+            {{ labels.execution.tags.get(item.tag.value, item.tag.value) }}
         </span>
         {% endif %}
     </div>
     {% if item.importance is not none and item.urgency is not none %}
-    <div class="card-scores">重要度: {{ item.importance }}  緊急度: {{ item.urgency }}</div>
+    <div class="card-scores">{{ labels.organization.importance_label }} {{ item.importance }}  {{ labels.organization.urgency_label }} {{ item.urgency }}</div>
     {% endif %}
     {% if item.note %}
     <div class="card-note">{{ item.note }}</div>
@@ -40,14 +40,14 @@
     <div class="card-actions">
         {% if item.tag and item.tag.value == "project" %}
         <button hx-get="/review/{{ item.id }}/plan?step=1" hx-target="#plan-area" hx-swap="innerHTML"
-                class="btn-sm btn-primary">計画を開始</button>
+                class="btn-sm btn-primary">{{ labels.review.plan_button }}</button>
         <button hx-post="/review/{{ item.id }}/delete" hx-target="#item-list" hx-swap="innerHTML"
-                class="btn-sm btn-danger">削除</button>
+                class="btn-sm btn-danger">{{ labels.review.delete_button }}</button>
         {% else %}
         <button hx-post="/review/{{ item.id }}/to_inbox" hx-target="#item-list" hx-swap="innerHTML"
-                class="btn-sm btn-secondary">Inboxに戻す</button>
+                class="btn-sm btn-secondary">{{ labels.review.to_inbox_button }}</button>
         <button hx-post="/review/{{ item.id }}/delete" hx-target="#item-list" hx-swap="innerHTML"
-                class="btn-sm btn-danger">削除</button>
+                class="btn-sm btn-danger">{{ labels.review.delete_button }}</button>
         {% endif %}
     </div>
     {% endif %}
@@ -56,17 +56,17 @@
 {% if not items %}
     {% if page == "review" %}
     <div class="flow-message">
-        <span class="flow-message-text">見直し対象はありません</span>
-        <a href="/" class="flow-message-link">→ ダッシュボードへ</a>
+        <span class="flow-message-text">{{ labels.review.empty_message }}</span>
+        <a href="/" class="flow-message-link">{{ labels.review.empty_link }}</a>
     </div>
     {% else %}
-    <p class="empty-msg">アイテムはありません</p>
+    <p class="empty-msg">{{ labels.review.items_empty }}</p>
     {% endif %}
 {% endif %}
 {% if items and active_page == "/inbox" %}
 <div class="flow-action">
     <form action="/inbox/process_all" method="post">
-        <button type="submit" class="btn-primary btn-full">すべて書き出した → 明確化へ進む</button>
+        <button type="submit" class="btn-primary btn-full">{{ labels.inbox.process_all }}</button>
     </form>
 </div>
 {% endif %}

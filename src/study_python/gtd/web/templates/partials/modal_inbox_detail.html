@@ -1,0 +1,29 @@
+<div class="inbox-detail">
+    <div class="inbox-detail-header">
+        <span class="inbox-detail-icon">
+            {% if notification.notification_type == 'achievement' %}&#127942;{% elif notification.notification_type == 'system' %}&#128227;{% else %}&#128276;{% endif %}
+        </span>
+        <strong>{{ notification.title }}</strong>
+    </div>
+    <div class="inbox-detail-meta">
+        <span class="inbox-detail-type">
+            {% if notification.notification_type == 'system' %}{{ labels.modal_inbox.type_system }}{% elif notification.notification_type == 'achievement' %}{{ labels.modal_inbox.type_achievement }}{% else %}{{ labels.modal_inbox.type_reminder }}{% endif %}
+        </span>
+        <span class="inbox-detail-date">{{ notification.created_at[:19] | replace("T", " ") }}</span>
+    </div>
+    <div class="inbox-detail-body">
+        {{ notification.message }}
+    </div>
+    <div class="inbox-detail-footer">
+        <button class="btn-sm btn-secondary"
+                hx-get="/api/iconbar/notifications" hx-target="#modal-inbox .modal-body" hx-swap="innerHTML">
+            {{ labels.modal_inbox.back_to_list }}
+        </button>
+    </div>
+</div>
+<script>
+fetchAuth('/api/iconbar/badge_count').then(function(html) {
+    var el = document.getElementById('inbox-badge');
+    if (el) el.innerHTML = html;
+});
+</script>

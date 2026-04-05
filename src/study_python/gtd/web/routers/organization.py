@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.organization import OrganizationLogic
 from study_python.gtd.web.db_repository import DbGtdRepository
@@ -15,6 +12,7 @@ from study_python.gtd.web.dependencies import (
     require_auth,
     validate_item_id,
 )
+from study_python.gtd.web.template_engine import templates
 
 
 def _safe_int(value: object, default: int, min_val: int, max_val: int) -> int:
@@ -31,7 +29,6 @@ router = APIRouter(
     tags=["organization"],
     dependencies=[Depends(require_auth)],
 )
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 
 @router.get("", response_class=HTMLResponse)

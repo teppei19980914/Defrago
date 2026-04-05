@@ -3,27 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindFlow - ログイン</title>
+    <title>{{ labels.app.name }} - {{ labels.auth.login }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div class="login-container">
+    <div class="login-container login-two-col">
         <div class="login-card">
-            <h1 class="login-title">MindFlow</h1>
-            <p class="login-subtitle">GTD タスク管理</p>
+            <h1 class="login-title">{{ labels.app.name }}</h1>
+            <p class="login-subtitle">{{ labels.app.subtitle }}</p>
             {% if error %}
             <div class="error-msg">{{ error }}</div>
             {% endif %}
             <form method="POST" action="/login">
                 <div class="form-group">
-                    <input type="text" name="username" placeholder="ユーザー名" class="text-input" required autofocus>
+                    <input type="text" name="username" placeholder="{{ labels.auth.username_placeholder }}" class="text-input" required autofocus>
                 </div>
                 <div class="form-group">
-                    <input type="password" name="password" placeholder="パスワード" class="text-input" required>
+                    <input type="password" name="password" placeholder="{{ labels.auth.password_placeholder }}" class="text-input" required>
                 </div>
-                <button type="submit" class="btn-primary btn-full">ログイン</button>
+                <button type="submit" class="btn-primary btn-full">{{ labels.auth.login }}</button>
             </form>
-            <p class="login-register-link">アカウントをお持ちでない方は <a href="/register">新規登録</a></p>
+            <p class="login-register-link">{{ labels.auth.login_to_register }} <a href="/register">{{ labels.auth.register }}</a></p>
+        </div>
+        <div class="philosophy-card">
+            <p class="philosophy-catchcopy">{{ labels.philosophy.login_catchcopy }}</p>
+            <p class="philosophy-text">
+                {{ labels.philosophy.login_line1 }}<br>
+                {{ labels.philosophy.login_line2 }}
+            </p>
+            <p class="philosophy-text">
+                {{ labels.philosophy.login_line3 }}<br>
+                {{ labels.philosophy.login_line4 }}
+            </p>
+            <div class="philosophy-principles">
+                <div class="philosophy-principle">
+                    <span class="philosophy-principle-name">{{ labels.philosophy.principle1_name }}</span>
+                    <span class="philosophy-principle-desc">{{ labels.philosophy.principle1_desc }}</span>
+                </div>
+                <div class="philosophy-principle">
+                    <span class="philosophy-principle-name">{{ labels.philosophy.principle2_name }}</span>
+                    <span class="philosophy-principle-desc">{{ labels.philosophy.principle2_desc }}</span>
+                </div>
+                <div class="philosophy-principle">
+                    <span class="philosophy-principle-name">{{ labels.philosophy.principle3_name }}</span>
+                    <span class="philosophy-principle-desc">{{ labels.philosophy.principle3_desc }}</span>
+                </div>
+            </div>
         </div>
     </div>
 </body>

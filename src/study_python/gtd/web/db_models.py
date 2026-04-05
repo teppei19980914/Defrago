@@ -19,6 +19,20 @@ class UserRow(Base):
     created_at: Mapped[str] = mapped_column(String(50), nullable=False)
 
 
+class NotificationRow(Base):
+    """通知のDBテーブル定義."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    notification_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    message: Mapped[str] = mapped_column(Text, default="")
+    is_read: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[str] = mapped_column(String(50), nullable=False)
+
+
 class GtdItemRow(Base):
     """GTDアイテムのDBテーブル定義."""
 

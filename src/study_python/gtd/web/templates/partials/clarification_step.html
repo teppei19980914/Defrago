@@ -1,14 +1,14 @@
 {% if current %}
-<p class="muted-text">{{ items|length }} 件の未分類アイテム</p>
+<p class="muted-text">{{ items|length }} {{ labels.clarification.count_suffix }}</p>
 <div class="item-display">{{ current.title }}</div>
 
 {% if show_context_form %}
-<p class="question-text">タスクのContextを設定してください:</p>
+<p class="question-text">{{ labels.clarification.context_title }}</p>
 <form hx-post="/clarification/classify_task" hx-target="#clarification-area" hx-swap="innerHTML">
     <input type="hidden" name="item_id" value="{{ current.id }}">
 
     <div class="form-group">
-        <label class="form-label required">実施場所（複数選択可）</label>
+        <label class="form-label required">{{ labels.clarification.location_label }}</label>
         {% for val, name in locations %}
         <label class="checkbox-label">
             <input type="checkbox" name="locations" value="{{ val }}" {% if val == "desk" %}checked{% endif %}> {{ name }}
@@ -17,7 +17,7 @@
     </div>
 
     <div class="form-group">
-        <label class="form-label required">所要時間</label>
+        <label class="form-label required">{{ labels.clarification.time_label }}</label>
         <select name="time_estimate" class="select-input">
             {% for val, name in time_estimates %}
             <option value="{{ val }}" {% if val == "30min" %}selected{% endif %}>{{ name }}</option>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="form-group">
-        <label class="form-label required">必要なエネルギー</label>
+        <label class="form-label required">{{ labels.clarification.energy_label }}</label>
         {% for val, name in energy_levels %}
         <label class="radio-label">
             <input type="radio" name="energy" value="{{ val }}" {% if val == "medium" %}checked{% endif %}> {{ name }}
@@ -34,7 +34,7 @@
         {% endfor %}
     </div>
 
-    <button type="submit" class="btn-primary">タスクとして登録</button>
+    <button type="submit" class="btn-primary">{{ labels.clarification.classify_button }}</button>
 </form>
 {% else %}
 <p class="question-text">{{ question }}</p>
@@ -43,19 +43,19 @@
         <input type="hidden" name="item_id" value="{{ current.id }}">
         <input type="hidden" name="step" value="{{ step }}">
         <input type="hidden" name="choice" value="yes">
-        <button type="submit" class="btn-primary">はい</button>
+        <button type="submit" class="btn-primary">{{ labels.clarification.yes }}</button>
     </form>
     <form hx-post="/clarification/answer" hx-target="#clarification-area" hx-swap="innerHTML" style="display:inline">
         <input type="hidden" name="item_id" value="{{ current.id }}">
         <input type="hidden" name="step" value="{{ step }}">
         <input type="hidden" name="choice" value="no">
-        <button type="submit" class="btn-secondary">いいえ</button>
+        <button type="submit" class="btn-secondary">{{ labels.clarification.no }}</button>
     </form>
 </div>
 {% endif %}
 {% else %}
 <div class="flow-message">
-    <span class="flow-message-text">すべてのアイテムを分類しました</span>
-    <a href="/organization" class="flow-message-link">→ 整理へ進む</a>
+    <span class="flow-message-text">{{ labels.clarification.done_message }}</span>
+    <a href="/organization" class="flow-message-link">{{ labels.clarification.done_link }}</a>
 </div>
 {% endif %}

@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from study_python.gtd.logic.clarification import ClarificationLogic
 from study_python.gtd.models import EnergyLevel, Location, TimeEstimate
 from study_python.gtd.web.db_repository import DbGtdRepository
 from study_python.gtd.web.dependencies import get_repository, require_auth
+from study_python.gtd.web.labels import load_labels
+from study_python.gtd.web.template_engine import templates
 
 
 router = APIRouter(
@@ -19,14 +18,9 @@ router = APIRouter(
     tags=["clarification"],
     dependencies=[Depends(require_auth)],
 )
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
-QUESTIONS = [
-    "自身が実施しなくてはいけないですか？",
-    "日時が明確ですか？",
-    "2ステップ以上のアクションが必要ですか？",
-    "数分で実施できますか？",
-]
+_cl = load_labels()["clarification"]
+QUESTIONS = [_cl["question1"], _cl["question2"], _cl["question3"], _cl["question4"]]
 
 
 def _get_context(
@@ -48,17 +42,27 @@ def _get_context(
         "show_context_form": show_context_form,
         "locations": [
             (loc.value, name)
-            for loc, name in zip(Location, ["デスク", "自宅", "移動中"], strict=False)
+            for loc, name in zip(
+                Location,
+                [_cl["locations"][loc_.value] for loc_ in Location],
+                strict=False,
+            )
         ],
         "time_estimates": [
             (te.value, name)
             for te, name in zip(
-                TimeEstimate, ["10分以内", "30分以内", "1時間以内"], strict=False
+                TimeEstimate,
+                [_cl["time_estimates"][t.value] for t in TimeEstimate],
+                strict=False,
             )
         ],
         "energy_levels": [
             (el.value, name)
-            for el, name in zip(EnergyLevel, ["低", "中", "高"], strict=False)
+            for el, name in zip(
+                EnergyLevel,
+                [_cl["energy_levels"][e.value] for e in EnergyLevel],
+                strict=False,
+            )
         ],
     }
 

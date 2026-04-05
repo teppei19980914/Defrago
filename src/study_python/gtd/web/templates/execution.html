@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-container">
-    <h2 class="page-title">実行 - タスク一覧</h2>
+    <h2 class="page-title">{{ labels.execution.title }}</h2>
     <div class="filter-row">
-        <span class="filter-label">フィルタ:</span>
-        <a href="/execution?tag=all" class="btn-sm {% if tag_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">すべて</a>
-        <a href="/execution?tag=delegation" class="btn-sm {% if tag_filter == 'delegation' %}btn-primary{% else %}btn-secondary{% endif %}">依頼</a>
-        <a href="/execution?tag=calendar" class="btn-sm {% if tag_filter == 'calendar' %}btn-primary{% else %}btn-secondary{% endif %}">カレンダー</a>
-        <a href="/execution?tag=do_now" class="btn-sm {% if tag_filter == 'do_now' %}btn-primary{% else %}btn-secondary{% endif %}">即実行</a>
-        <a href="/execution?tag=task" class="btn-sm {% if tag_filter == 'task' %}btn-primary{% else %}btn-secondary{% endif %}">タスク</a>
+        <span class="filter-label">{{ labels.execution.filter_label }}</span>
+        <a href="/execution?tag=all" class="btn-sm {% if tag_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">{{ labels.execution.filter_all }}</a>
+        <a href="/execution?tag=delegation" class="btn-sm {% if tag_filter == 'delegation' %}btn-primary{% else %}btn-secondary{% endif %}">{{ labels.execution.tags.delegation }}</a>
+        <a href="/execution?tag=calendar" class="btn-sm {% if tag_filter == 'calendar' %}btn-primary{% else %}btn-secondary{% endif %}">{{ labels.execution.tags.calendar }}</a>
+        <a href="/execution?tag=do_now" class="btn-sm {% if tag_filter == 'do_now' %}btn-primary{% else %}btn-secondary{% endif %}">{{ labels.execution.tags.do_now }}</a>
+        <a href="/execution?tag=task" class="btn-sm {% if tag_filter == 'task' %}btn-primary{% else %}btn-secondary{% endif %}">{{ labels.execution.tags.task }}</a>
     </div>
-    <p class="muted-text">{{ count }} 件のタスク</p>
+    <p class="muted-text">{{ count }} {{ labels.execution.count_suffix }}</p>
     <div id="task-list">
         {% include "partials/task_list.html" %}
     </div>

@@ -19,6 +19,7 @@ from study_python.gtd.web.routers import (
     clarification,
     dashboard,
     execution,
+    iconbar,
     inbox,
     organization,
     review,
@@ -139,6 +140,7 @@ def create_app() -> FastAPI:
     app.include_router(execution.router)
     app.include_router(review.router)
     app.include_router(settings_web.router)
+    app.include_router(iconbar.router)
 
     return app
 
