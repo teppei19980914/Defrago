@@ -42,7 +42,7 @@ def _migrate_add_project_planning_columns(engine: object) -> None:
         "project_purpose": "TEXT DEFAULT ''",
         "project_outcome": "TEXT DEFAULT ''",
         "project_support_location": "TEXT DEFAULT ''",
-        "is_next_action": "BOOLEAN DEFAULT 0",
+        "is_next_action": "BOOLEAN DEFAULT FALSE",
         "deadline": "VARCHAR(50) DEFAULT ''",
         "user_id": "VARCHAR(36) NOT NULL DEFAULT ''",
     }
