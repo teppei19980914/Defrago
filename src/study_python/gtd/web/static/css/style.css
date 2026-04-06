@@ -532,6 +532,17 @@ a { color: var(--accent-blue); text-decoration: none; }
 .inbox-detail-footer { display: flex; justify-content: flex-end; padding-top: 12px; }
 
 /* Help actions */
+.help-about-developer {
+    background: var(--bg-surface); border-radius: 8px; padding: 16px; margin-top: 16px;
+    border-left: 3px solid var(--accent-blue);
+}
+.help-about-developer strong { font-size: 14px; display: block; margin-bottom: 8px; }
+.help-about-developer p { font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin: 4px 0 12px; }
+.help-developer-link {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+    color: var(--accent-blue); font-weight: bold; text-decoration: none;
+}
+.help-developer-link:hover { text-decoration: underline; }
 .help-actions { display: flex; justify-content: center; margin: 16px 0; }
 .help-update-btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 
