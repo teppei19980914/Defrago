@@ -212,19 +212,51 @@ CMD ["uv", "run", "uvicorn", "study_python.gtd.web.app:app", "--host", "0.0.0.0"
 
 ## 5. CI/CD
 
+### ブランチ運用ルール（必須）
+
+**mainブランチへの直接pushは禁止**。すべての変更はブランチ→PR→マージの流れで行う。
+
+```
+main（本番）← PRでのみマージ可能
+  ├── release/vX.Y.Z（リリース）
+  ├── feature/xxx（機能追加）
+  ├── fix/xxx（バグ修正）
+  └── docs/xxx（ドキュメント）
+```
+
+**強制手段**:
+- ローカル: pre-push hookがmainへの直接pushをブロック（`scripts/install-hooks.sh`でインストール）
+- CI: `release-check`ジョブがPR時にreleases.json更新・バージョン整合性を自動検証
+
 ### GitHub Actions ワークフロー
 
 **ファイル**: `.github/workflows/ci.yml`
 
 **トリガー**: `main`ブランチへのpush / PR
 
-**実行内容**:
+#### Job 1: lint-and-test（全push/PR）
 
 | ステップ | コマンド | 失敗時 |
 |---------|---------|--------|
 | Lint | `uv run ruff check .` | ルール違反があれば失敗 |
 | Format | `uv run ruff format --check .` | フォーマット差分があれば失敗 |
 | Test | `uv run pytest --cov=src/study_python --cov-report=term-missing -x` | テスト失敗 or カバレッジ75%未満で失敗 |
+
+#### Job 2: release-check（PRのみ）
+
+| チェック | 内容 | 失敗時 |
+|---------|------|--------|
+| releases.json更新確認 | PRにreleases.jsonの変更が含まれるか | バージョンアップ漏れ |
+| バージョン整合性 | `current_version`と最新リリースの`version`が一致するか | バージョン不整合 |
+| 最終更新日確認 | labels.jsonの`updated_value`がリリース日と一致するか | 日付更新漏れ（警告） |
+| リリースエントリ検証 | version, date, title, summary, changesが全て存在するか | 記載漏れ |
+
+### 新規開発者のセットアップ
+
+```bash
+# pre-push hookのインストール（初回のみ）
+bash scripts/install-hooks.sh
+```
 
 ### Pre-commitフック
 

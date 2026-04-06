@@ -35,6 +35,65 @@ jobs:
         run: uv run pytest --cov=src/study_python --cov-report=term-missing -x
         env:
           SECRET_KEY: test-secret
-          ADMIN_USERNAME: admin
-          ADMIN_PASSWORD_HASH: "dummy-hash-for-ci"
           DATABASE_URL: "sqlite:///./test.db"
+
+  release-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check releases.json is updated
+        run: |
+          if ! git diff origin/main...HEAD --name-only | grep -q "src/study_python/gtd/web/static/releases.json"; then
+            echo "::error::releases.json が更新されていません。"
+            echo "::error::新バージョンのリリース情報を releases.json に追加してください。"
+            echo "::error::手順: docs/OPERATIONS.md の「バージョン管理・リリース」を参照。"
+            exit 1
+          fi
+          echo "releases.json is updated."
+
+      - name: Validate version consistency
+        run: |
+          # current_version と releases配列の先頭バージョンが一致するか
+          CURRENT=$(python -c "import json; print(json.load(open('src/study_python/gtd/web/static/releases.json'))['current_version'])")
+          LATEST=$(python -c "import json; print(json.load(open('src/study_python/gtd/web/static/releases.json'))['releases'][0]['version'])")
+
+          if [ "$CURRENT" != "$LATEST" ]; then
+            echo "::error::current_version ($CURRENT) と最新リリースのversion ($LATEST) が一致しません。"
+            echo "::error::releases.json の current_version を最新リリースに合わせてください。"
+            exit 1
+          fi
+          echo "Version consistency OK: $CURRENT"
+
+      - name: Validate labels.json updated_value
+        run: |
+          RELEASE_DATE=$(python -c "import json; print(json.load(open('src/study_python/gtd/web/static/releases.json'))['releases'][0]['date'])")
+          LABEL_DATE=$(python -c "import json; print(json.load(open('src/study_python/gtd/web/static/labels.json'))['settings']['updated_value'])")
+
+          if [ "$RELEASE_DATE" != "$LABEL_DATE" ]; then
+            echo "::warning::labels.json の settings.updated_value ($LABEL_DATE) が最新リリース日 ($RELEASE_DATE) と一致しません。"
+            echo "::warning::labels.json の updated_value を更新してください。"
+          fi
+          echo "Label date check done."
+
+      - name: Validate release entry has required fields
+        run: |
+          python -c "
+          import json, sys
+          data = json.load(open('src/study_python/gtd/web/static/releases.json'))
+          latest = data['releases'][0]
+          required = ['version', 'date', 'title', 'summary', 'changes']
+          missing = [f for f in required if f not in latest or not latest[f]]
+          if missing:
+              print(f'::error::最新リリースに必須フィールドが不足: {missing}')
+              sys.exit(1)
+          if not latest['changes']:
+              print('::error::changes が空です。変更内容を記載してください。')
+              sys.exit(1)
+          print(f'Release entry valid: v{latest[\"version\"]} ({latest[\"date\"]})')
+          print(f'  Title: {latest[\"title\"]}')
+          print(f'  Changes: {len(latest[\"changes\"])} items')
+          "
