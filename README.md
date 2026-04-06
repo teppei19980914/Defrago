@@ -93,10 +93,12 @@ git clone https://github.com/your-username/mindflow.git
 cd mindflow
 uv sync --dev
 
-# 環境変数を設定
+# 環境変数を設定（本番はPostgreSQLを推奨）
 export SECRET_KEY="your-secret-key"
-export ADMIN_USERNAME="admin"
-export ADMIN_PASSWORD_HASH=$(python -c "import hashlib; print(hashlib.sha256(b'your-password').hexdigest())")
+
+# ローカル開発: SQLiteがデフォルト
+# 本番: Neon PostgreSQL
+# export DATABASE_URL="postgresql://user:password@host/dbname"
 
 # 起動
 uv run mindflow-web
@@ -150,9 +152,13 @@ src/study_python/gtd/
 │   └── review.py          # 見直し
 └── web/                   # FastAPI Webアプリケーション
     ├── app.py             # アプリファクトリ
-    ├── routers/           # 各フェーズのルーター
+    ├── auth.py            # bcrypt認証・ユーザー管理
+    ├── labels.py          # テキスト外部化（labels.json）
+    ├── template_engine.py # Jinja2テンプレートエンジン
+    ├── db_models.py       # SQLAlchemy ORM（UserRow, NotificationRow, GtdItemRow）
+    ├── routers/           # ルーター（auth, inbox, clarification, organization, execution, review, dashboard, iconbar）
     ├── templates/         # Jinja2 + HTMXパーシャル
-    └── static/            # CSS + HTMX
+    └── static/            # CSS + HTMX + labels.json
 ```
 
 ### 設計方針
@@ -160,7 +166,37 @@ src/study_python/gtd/
 - **ロジック層分離**: `GtdRepositoryProtocol`を介し、ビジネスロジックをWeb層から完全分離
 - **3層アーキテクチャ**: Model → Logic → Web
 - **HTMX**: ページ遷移なしのインタラクティブUI。SPAの体験をサーバーサイドで実現
-- **SQLite永続化**: 軽量でゼロ設定。環境変数`DATABASE_URL`で変更可能
+- **テキスト外部化**: 全ユーザー向けテキストは`labels.json`に集約。ハードコーディング禁止
+- **マルチテナント対応**: ユーザーテーブルにより各ユーザーのデータを分離・保護
+
+---
+
+## マルチユーザー対応
+
+**ユーザー登録と認証**
+
+- ユーザーは本アプリで自由に登録可能（ユーザー名: 3-50文字の英数字・ハイフン・アンダースコア）
+- パスワードはbcryptで安全にハッシュ化・保存
+- セッション認証により、ログイン状態を安全に保持
+
+**データ分離**
+
+- 全GTDアイテムは`user_id`でグループ化。ログインユーザーのデータのみ表示
+- 通知・プロジェクトも同様にユーザー単位で管理
+- マルチテナント環境に対応
+
+---
+
+## アイコンバー機能
+
+ヘッダーのアイコンバーは、MindFlowの補助的なツールにアクセスできます。
+
+| アイコン | 機能 | 説明 |
+|---------|------|------|
+| **通知** | Notifications | リリース通知・タスク関連のお知らせ |
+| **実績** | Achievements | 完了タスク数・プロジェクト達成の記録 |
+| **ヘルプ** | Help | アプリの使い方ガイド・チュートリアル |
+| **お問い合わせ** | Contact | 開発チームへのフィードバック送信 |
 
 ---
 
@@ -179,14 +215,15 @@ uv run mypy src/                       # 型チェック
 | カテゴリ | 技術 |
 |---------|------|
 | Web | FastAPI + Jinja2 + HTMX |
-| DB | SQLite + SQLAlchemy |
+| DB | PostgreSQL（本番）/ SQLite（開発）+ SQLAlchemy |
+| 認証 | bcrypt（パスワードハッシュ化） |
 | テスト | pytest + httpx |
 | 品質 | ruff + mypy（strict） |
-| CI/CD | GitHub Actions + Render |
+| デプロイ | Docker + Render + Neon PostgreSQL |
 
 ## デプロイ
 
-Renderにデプロイ可能（`render.yaml`定義済み）。環境変数`SECRET_KEY`、`ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`DATABASE_URL`を設定してください。
+Render + Neon PostgreSQLにデプロイ可能（`render.yaml`定義済み）。環境変数`SECRET_KEY`、`DATABASE_URL`を設定してください。詳細は[運用マニュアル](docs/OPERATIONS.md)を参照。
 
 ## ライセンス
 
