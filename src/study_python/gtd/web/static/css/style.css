@@ -388,6 +388,14 @@ a { color: var(--accent-blue); text-decoration: none; }
 .login-subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 24px; }
 .login-register-link { text-align: center; font-size: 13px; margin-top: 16px; color: var(--text-secondary); }
 .login-register-link a { color: var(--accent); }
+.register-link-disabled span { color: var(--text-muted); }
+.register-disabled {
+    text-align: center; padding: 24px 16px;
+}
+.register-disabled-icon { font-size: 40px; display: block; margin-bottom: 12px; }
+.register-disabled p {
+    font-size: 14px; color: var(--text-secondary); line-height: 1.8;
+}
 .login-card .form-group { margin-bottom: 16px; }
 .error-msg { background: rgba(243,139,168,0.15); color: var(--accent-red); padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
 

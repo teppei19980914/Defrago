@@ -75,6 +75,7 @@ select = [
 ignore = [
     "E501",    # line too long (handled by formatter)
     "PLR0913", # too many arguments
+    "PLR0911", # too many return statements (auth register has guard clauses)
     "PLR2004", # magic value comparison
     "RUF001",  # ambiguous unicode (Japanese fullwidth chars)
     "RUF002",  # ambiguous unicode in docstring

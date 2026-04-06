@@ -99,6 +99,9 @@ async def register(
     db: Session = Depends(get_db_session),
 ) -> HTMLResponse | RedirectResponse:
     """ユーザー登録を処理する."""
+    if load_labels()["auth"].get("register_disabled"):
+        return RedirectResponse(url="/register", status_code=302)
+
     client_ip = request.client.host if request.client else "unknown"
 
     if _is_rate_limited(client_ip):

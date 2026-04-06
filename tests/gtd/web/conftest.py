@@ -72,6 +72,15 @@ def _make_app(test_session_factory, monkeypatch):
             session.close()
 
     app.dependency_overrides[get_db_session] = override_session
+
+    # テスト時は登録を有効化
+    from study_python.gtd.web.labels import load_labels
+    from study_python.gtd.web.template_engine import templates as tmpl
+
+    load_labels.cache_clear()
+    labels = load_labels()
+    labels["auth"]["register_disabled"] = False
+    tmpl.env.globals["labels"] = labels
     return app
 
 

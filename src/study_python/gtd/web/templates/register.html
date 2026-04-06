@@ -11,6 +11,13 @@
         <div class="login-card">
             <h1 class="login-title">{{ labels.app.name }}</h1>
             <p class="login-subtitle">{{ labels.auth.register_subtitle }}</p>
+            {% if labels.auth.register_disabled %}
+            <div class="register-disabled">
+                <span class="register-disabled-icon">&#128679;</span>
+                <p>{{ labels.auth.register_disabled_message }}</p>
+            </div>
+            <p class="login-register-link">{{ labels.auth.register_to_login }} <a href="/login">{{ labels.auth.login }}</a></p>
+            {% else %}
             {% if error %}
             <div class="error-msg">{{ error }}</div>
             {% endif %}
@@ -31,6 +38,7 @@
                 <button type="submit" class="btn-primary btn-full">{{ labels.auth.register_button }}</button>
             </form>
             <p class="login-register-link">{{ labels.auth.register_to_login }} <a href="/login">{{ labels.auth.login }}</a></p>
+            {% endif %}
         </div>
         <div class="philosophy-card">
             <p class="philosophy-catchcopy">{{ labels.philosophy.register_catchcopy }}</p>
