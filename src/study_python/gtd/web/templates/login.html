@@ -23,7 +23,11 @@
                 </div>
                 <button type="submit" class="btn-primary btn-full">{{ labels.auth.login }}</button>
             </form>
+            {% if labels.auth.register_disabled %}
+            <p class="login-register-link register-link-disabled">{{ labels.auth.login_to_register }} <span>{{ labels.auth.register }}</span></p>
+            {% else %}
             <p class="login-register-link">{{ labels.auth.login_to_register }} <a href="/register">{{ labels.auth.register }}</a></p>
+            {% endif %}
         </div>
         <div class="philosophy-card">
             <p class="philosophy-catchcopy">{{ labels.philosophy.login_catchcopy }}</p>

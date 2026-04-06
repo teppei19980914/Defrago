@@ -212,19 +212,51 @@ CMD ["uv", "run", "uvicorn", "study_python.gtd.web.app:app", "--host", "0.0.0.0"
 
 ## 5. CI/CD
 
+### ブランチ運用ルール（必須）
+
+**mainブランチへの直接pushは禁止**。すべての変更はブランチ→PR→マージの流れで行う。
+
+```
+main（本番）← PRでのみマージ可能
+  ├── release/vX.Y.Z（リリース）
+  ├── feature/xxx（機能追加）
+  ├── fix/xxx（バグ修正）
+  └── docs/xxx（ドキュメント）
+```
+
+**強制手段**:
+- ローカル: pre-push hookがmainへの直接pushをブロック（`scripts/install-hooks.sh`でインストール）
+- CI: `release-check`ジョブがPR時にreleases.json更新・バージョン整合性を自動検証
+
 ### GitHub Actions ワークフロー
 
 **ファイル**: `.github/workflows/ci.yml`
 
 **トリガー**: `main`ブランチへのpush / PR
 
-**実行内容**:
+#### Job 1: lint-and-test（全push/PR）
 
 | ステップ | コマンド | 失敗時 |
 |---------|---------|--------|
 | Lint | `uv run ruff check .` | ルール違反があれば失敗 |
 | Format | `uv run ruff format --check .` | フォーマット差分があれば失敗 |
 | Test | `uv run pytest --cov=src/study_python --cov-report=term-missing -x` | テスト失敗 or カバレッジ75%未満で失敗 |
+
+#### Job 2: release-check（PRのみ）
+
+| チェック | 内容 | 失敗時 |
+|---------|------|--------|
+| releases.json更新確認 | PRにreleases.jsonの変更が含まれるか | バージョンアップ漏れ |
+| バージョン整合性 | `current_version`と最新リリースの`version`が一致するか | バージョン不整合 |
+| 最終更新日確認 | labels.jsonの`updated_value`がリリース日と一致するか | 日付更新漏れ（警告） |
+| リリースエントリ検証 | version, date, title, summary, changesが全て存在するか | 記載漏れ |
+
+### 新規開発者のセットアップ
+
+```bash
+# pre-push hookのインストール（初回のみ）
+bash scripts/install-hooks.sh
+```
 
 ### Pre-commitフック
 
@@ -407,9 +439,30 @@ logs/ ディレクトリのファイルを確認
 
 ## 10. バージョン管理・リリース
 
-### リリース手順
+### セマンティックバージョニング
 
-**1. `releases.json`を編集**
+```
+MAJOR.MINOR.PATCH
+  │     │     └─ バグ修正のみ（例: 1.0.1）
+  │     └────── 新機能追加（例: 1.1.0）
+  └──────────── 破壊的変更（例: 2.0.0）
+```
+
+### リリース手順（全手順）
+
+以下の手順を順番に実施する。
+
+#### Step 1: リリースブランチ作成
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b release/v1.1.0
+```
+
+#### Step 2: releases.json を編集
+
+`src/study_python/gtd/web/static/releases.json` を編集する。
 
 ```json
 {
@@ -425,29 +478,102 @@ logs/ ディレクトリのファイルを確認
         "機能Bを改善"
       ]
     },
-    ...既存リリース
+    {
+      "version": "1.0.0",
+      "... 既存リリース（削除しない）": ""
+    }
   ]
 }
 ```
 
-**2. コミット＆プッシュ**
+**編集ルール**:
+- `current_version` を新バージョンに更新
+- `releases` 配列の**先頭**に新リリースを追加（既存は残す）
+- `date` はリリース日（YYYY-MM-DD）
+- `title` はユーザーに通知されるタイトル
+- `summary` は受信ボックスに表示される概要
+- `changes` は各変更点のリスト
+
+#### Step 3: settings の最終更新日を更新
+
+`src/study_python/gtd/web/static/labels.json` の `settings.updated_value` を更新する。
+
+```json
+"settings": {
+  ...
+  "updated_value": "2026-04-10"
+}
+```
+
+#### Step 4: ローカルで動作確認
+
+```bash
+run_local.bat
+```
+
+確認項目:
+- [ ] 設定画面のバージョンが新バージョンになっている
+- [ ] ヘルプ → アップデート情報で新バージョンが表示される
+- [ ] 受信ボックスに新バージョンの通知が届いている
+- [ ] 既存機能が正常に動作する（収集→明確化→整理→実行→見直し）
+
+#### Step 5: コミット＆プッシュ
 
 ```bash
 git add src/study_python/gtd/web/static/releases.json
-git commit -m "chore: v1.1.0 リリースノート追加"
-git push origin main
+git add src/study_python/gtd/web/static/labels.json
+git commit -m "chore: v1.1.0 リリース"
+git push origin release/v1.1.0
 ```
 
-**3. 自動で以下が反映される**
+#### Step 6: Pull Request 作成
 
-- 設定画面 → バージョン番号が更新
-- アップデート情報ページ → 新バージョンが最上部に「最新」バッジ付きで表示
-- 受信ボックス → 全ユーザーに通知が自動配信、未読バッジ表示
+```bash
+gh pr create --title "release: v1.1.0" --body "## リリース内容
+- 機能Aを追加
+- 機能Bを改善
+
+## 確認済み
+- [ ] ローカル動作確認済み
+- [ ] バージョン表示確認済み
+- [ ] 通知配信確認済み"
+```
+
+#### Step 7: CI 確認＆マージ
+
+1. GitHub Actions CI が緑（lint + format + test）であることを確認
+2. Pull Request を main にマージ
+3. **Render が自動デプロイを開始**
+
+#### Step 8: デプロイ確認
+
+1. Renderダッシュボードでデプロイステータスが「Live」になるのを待つ
+2. https://mindflow-gtd.onrender.com/login にアクセスして動作確認
+3. 新規ユーザーで登録し、受信ボックスに通知が届くことを確認
+
+#### Step 9: ブランチ削除
+
+```bash
+git checkout main
+git pull origin main
+git branch -d release/v1.1.0
+```
+
+### リリース後の自動反映
+
+mainマージ後、以下がコード変更なしで自動反映される:
+
+| 反映先 | 内容 |
+|--------|------|
+| 設定画面 | バージョン番号が更新 |
+| アップデート情報ページ | 新バージョンが最上部に「最新」バッジ付きで表示 |
+| 受信ボックス | 全ユーザーに通知が自動配信、未読バッジ表示 |
 
 ### 通知の自動配信の仕組み
 
 ```
 releases.json にリリース追加
+  ↓ mainマージ → Render自動デプロイ
   ↓
 ユーザーが受信ボックスを開く or ページロード時
   ↓
@@ -457,6 +583,15 @@ _sync_release_notifications() が自動実行
   ↓
 未読バッジが表示される
 ```
+
+### ブランチ命名規約
+
+| 種別 | 命名 | 例 |
+|------|------|-----|
+| リリース | `release/vX.Y.Z` | `release/v1.1.0` |
+| 機能追加 | `feature/機能名` | `feature/dark-mode-toggle` |
+| バグ修正 | `fix/修正内容` | `fix/login-redirect` |
+| ドキュメント | `docs/対象` | `docs/api-spec` |
 
 ---
 
