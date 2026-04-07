@@ -1,6 +1,20 @@
 {
-  "current_version": "2.0.0",
+  "current_version": "2.1.0",
   "releases": [
+    {
+      "version": "2.1.0",
+      "date": "2026-04-07",
+      "title": "Defrago へリブランディング",
+      "summary": "アプリ名を「MindFlow」から「Defrago」に変更しました。「脳をデフラグして実行する」という製品コンセプトを直接表現する名称です。",
+      "changes": [
+        "アプリ名を Defrago に変更（旧: MindFlow）",
+        "キャッチコピー: 「散らばった思考を、ひとつの流れに。」",
+        "全UI表示・ドキュメント・設定ファイルを Defrago に統一",
+        "URL を defrago.onrender.com に変更",
+        "リポジトリ名を Defrago に変更",
+        "機能・データ構造に変更はありません（v2.0.0 と互換）"
+      ]
+    },
     {
       "version": "2.0.0",
       "date": "2026-04-07",

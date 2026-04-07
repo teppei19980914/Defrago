@@ -1,7 +1,8 @@
 {
   "app": {
-    "name": "MindFlow",
-    "subtitle": "GTD タスク管理",
+    "name": "Defrago",
+    "subtitle": "脳のデフラグ・タスクマネージャ",
+    "tagline": "散らばった思考を、ひとつの流れに。",
     "tech_stack": "FastAPI + HTMX + SQLAlchemy",
     "platform": "Web アプリケーション"
   },
@@ -40,13 +41,13 @@
     "login_catchcopy": "頭の中を、空にする。",
     "login_line1": "「あれもやらなきゃ」「これも忘れちゃいけない」——",
     "login_line2": "その雑念が、あなたの創造性を奪っています。",
-    "login_line3": "MindFlowは、頭の中のすべてを安全な外部ストレージに書き出し、",
+    "login_line3": "Defragoは、頭の中のすべてを安全な外部ストレージに書き出し、",
     "login_line4": "脳を本来のフロー状態へ導くツールです。",
     "register_catchcopy": "脳をフロー状態へ。",
     "register_line1": "脳のワーキングメモリは極めて有限です。",
     "register_line2": "未処理のタスクがメモリを占有し続ける限り、",
     "register_line3": "本来の創造的な処理能力は発揮できません。",
-    "register_line4": "MindFlowに書き出すことで、脳のメモリを解放し、",
+    "register_line4": "Defragoに書き出すことで、脳のメモリを解放し、",
     "register_line5": "あなたが本当に集中すべきことに没頭できる状態をつくります。",
     "principle1_name": "Zero-Friction Capture",
     "principle1_desc": "思いついた瞬間に、ゼロ摩擦で外部化する",
@@ -213,9 +214,9 @@
     "update_button": "アップデート情報",
     "developer_title": "開発者の思い",
     "developer_line1": "脳のワーキングメモリは極めて有限です。「あれもやらなきゃ」という雑念がメモリを占有し続ける限り、本来の創造的な処理能力は発揮できません。",
-    "developer_line2": "MindFlowは、頭の中のすべてを安全な外部ストレージに書き出し、脳を本来のフロー状態へ導くために作りました。エッセンシャル思考に基づき、本当に重要なものだけに集中できる世界を目指しています。",
+    "developer_line2": "Defragoは、頭の中のすべてを安全な外部ストレージに書き出し、脳を本来のフロー状態へ導くために作りました。エッセンシャル思考に基づき、本当に重要なものだけに集中できる世界を目指しています。",
     "about_developer_title": "開発者について",
-    "about_developer_desc": "MindFlowは、ソフトウェアエンジニアの須山哲平が開発・運営しています。開発者の活動やその他のプロダクトについては、下記のホームページをご覧ください。",
+    "about_developer_desc": "Defragoは、ソフトウェアエンジニアの須山哲平が開発・運営しています。開発者の活動やその他のプロダクトについては、下記のホームページをご覧ください。",
     "about_developer_link": "開発者のホームページ",
     "about_developer_url": "https://teppei19980914.github.io/HomePage/",
     "faq_gtd_q": "GTDとは何ですか？",
@@ -270,7 +271,7 @@
     "updated_value": "2026-04-07"
   },
   "releases": {
-    "page_title": "MindFlow アップデート情報",
+    "page_title": "Defrago アップデート情報",
     "current_version_prefix": "現在のバージョン: v",
     "latest_badge": "最新"
   }

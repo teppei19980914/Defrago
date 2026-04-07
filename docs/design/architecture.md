@@ -1,4 +1,4 @@
-# MindFlow アーキテクチャ設計書
+# Defrago アーキテクチャ設計書
 
 更新日: 2026-04-07
 
@@ -6,7 +6,7 @@
 
 ## 1. システム概要
 
-MindFlow は GTD（Getting Things Done）手法に基づくタスク管理 Web アプリケーションである。
+Defrago は GTD（Getting Things Done）手法に基づくタスク管理 Web アプリケーションである。
 FastAPI + Jinja2 + HTMX による 3 層アーキテクチャで、収集・明確化・実行・見直しの 4 フェーズを一貫して管理し、
 エッセンシャル思考に基づいた本質的なタスク管理を実現する。
 
@@ -1243,7 +1243,7 @@ async def delete_item(
 
 ## まとめ
 
-MindFlow v2.0.0 の Web アーキテクチャは、**3 層分離** + **Protocol による粗結合** + **DI による user_id 強制フィルタ** + **エッセンシャル思考** により、以下を実現している：
+Defrago v2.0.0 の Web アーキテクチャは、**3 層分離** + **Protocol による粗結合** + **DI による user_id 強制フィルタ** + **エッセンシャル思考** により、以下を実現している：
 
 1. **Logic の再利用**: GUI（PySide6）→ Web（FastAPI）への移行が容易
 2. **テスト性**: Logic 層は Web フレームワーク非依存で 100% テスト可能

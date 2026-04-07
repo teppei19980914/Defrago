@@ -1,1 +1,1 @@
-"""MindFlow GTD Webアプリケーション."""
+"""Defrago GTD Webアプリケーション."""

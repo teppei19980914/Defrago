@@ -4,7 +4,7 @@
 
 ## プロジェクト概要
 
-- **アプリ名**: MindFlow
+- **アプリ名**: Defrago
 - **テーマ**: 脳内メモリをデフラグ化し、最速でタスクに落とし込む
 - **コンセプト**: 高機能をシンプルに（エッセンシャル思考）
 - **GTDフェーズ**: 4フェーズ（収集 → 明確化 → 実行 → 見直し）
@@ -24,7 +24,7 @@
 ├── Dockerfile          # Dockerイメージ定義
 ├── run_local.bat       # ローカル開発起動スクリプト
 ├── src/study_python/   # メインパッケージ
-│   ├── gtd/            # MindFlowコア（models, logic, web）
+│   ├── gtd/            # Defragoコア（models, logic, web）
 │   └── logging_config.py
 ├── tests/              # テストコード
 ├── docs/               # ドキュメント（OPERATIONS.md, requirements/, design/, specs/）

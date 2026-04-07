@@ -1,4 +1,4 @@
-# MindFlow 機能仕様書 (FastAPI Web版)
+# Defrago 機能仕様書 (FastAPI Web版)
 
 更新日: 2026-04-07 (v2.0.0)
 
@@ -6,14 +6,14 @@
 
 ## 1. 概要
 
-本書は MindFlow FastAPI Webアプリケーションの全機能を MECE（漏れなくダブりなく）に仕様化したものである。
+本書は Defrago FastAPI Webアプリケーションの全機能を MECE（漏れなくダブりなく）に仕様化したものである。
 GTD の 4 フェーズ（収集・明確化・実行・見直し）と横断的機能（ダッシュボード・認証・通知・アイコンバー・設定・ゴミ箱）を網羅する。
 
 ### 1.1 機能分類体系
 
 ```mermaid
 graph TB
-    MF[MindFlow] --> PHASE[GTDフェーズ機能]
+    MF[Defrago] --> PHASE[GTDフェーズ機能]
     MF --> CROSS[横断的機能]
 
     PHASE --> F1[F1: 収集]
@@ -807,7 +807,7 @@ releases.json を単一の情報源として、バージョン情報を一元管
 ```json
 {
   "app": {
-    "name": "MindFlow"
+    "name": "Defrago"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -896,7 +896,7 @@ F5 見直しフェーズの一部として機能。
 ### 15.1 ナビゲーション
 
 **サイドバー**:
-- MindFlow ロゴ
+- Defrago ロゴ
 - 4 つの主要ページリンク（ダッシュボード・収集・明確化・実行・見直し）※整理フェーズは v2.0.0 で削除
 - 設定 + ログアウトリンク
 

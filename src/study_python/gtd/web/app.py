@@ -103,7 +103,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Base.metadata.create_all(engine)
     _migrate_schema(engine)
     _cleanup_expired_trash(engine)
-    logger.info("MindFlow Web started")
+    logger.info("Defrago Web started")
     yield
 
 
@@ -115,7 +115,7 @@ def create_app() -> FastAPI:
     """
     settings = get_settings()
 
-    app = FastAPI(title="MindFlow GTD", lifespan=lifespan)
+    app = FastAPI(title="Defrago GTD", lifespan=lifespan)
 
     # Session middleware with security flags
     app.add_middleware(

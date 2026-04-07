@@ -1,4 +1,4 @@
-# MindFlow インフラ構成・コスト分析
+# Defrago インフラ構成・コスト分析
 
 更新日: 2026-04-07
 
@@ -11,7 +11,7 @@
 │  Render (Free Tier)         │
 │  Docker / Python 3.12       │
 │  FastAPI + Uvicorn          │
-│  mindflow-gtd.onrender.com  │
+│  defrago.onrender.com  │
 └──────────┬──────────────────┘
            ↓ PostgreSQL (SSL)
 ┌─────────────────────────────┐
@@ -30,7 +30,7 @@
 | データベース | Neon | Free | PostgreSQL 17（ユーザー・タスク・通知） |
 | CI/CD | GitHub Actions | Free | lint / format / テスト自動実行 |
 | ソースコード | GitHub | Free (Private) | バージョン管理 |
-| ドメイン | Render提供 | 無料 | mindflow-gtd.onrender.com |
+| ドメイン | Render提供 | 無料 | defrago.onrender.com |
 
 ### 技術スタック
 
@@ -50,7 +50,7 @@
 
 ### Render Free Tier
 
-| リソース | 上限 | MindFlow使用量 |
+| リソース | 上限 | Defrago使用量 |
 |---------|------|---------------|
 | インスタンス | 1台 | 1台 |
 | 帯域 | 100 GB/月 | 静的108KB × PV数 |
@@ -61,7 +61,7 @@
 
 ### Neon Free Tier
 
-| リソース | 上限 | MindFlow使用量 |
+| リソース | 上限 | Defrago使用量 |
 |---------|------|---------------|
 | ストレージ | 0.5 GB | 1,000ユーザーで約50MB |
 | Compute | 月400時間 | 常時稼働で十分 |
@@ -73,7 +73,7 @@
 
 ### GitHub Actions Free Tier
 
-| リソース | 上限 | MindFlow使用量 |
+| リソース | 上限 | Defrago使用量 |
 |---------|------|---------------|
 | 実行時間 | 2,000分/月 (Private) | 約3分/回 × push回数 |
 | ストレージ | 500 MB | 問題なし |

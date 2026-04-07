@@ -1,8 +1,8 @@
-# MindFlow 運用マニュアル
+# Defrago 運用マニュアル
 
-更新日: 2026-04-06
+更新日: 2026-04-07
 
-本ドキュメントは、MindFlowアプリケーションの運用に必要なすべての手順・知識を網羅する。新規開発者が本ドキュメントのみで運用を開始できることを目標とする。
+本ドキュメントは、Defragoアプリケーションの運用に必要なすべての手順・知識を網羅する。新規開発者が本ドキュメントのみで運用を開始できることを目標とする。
 
 ---
 
@@ -34,7 +34,7 @@
 │  Render (Free Tier)         │
 │  Docker / Python 3.12       │
 │  FastAPI + Uvicorn          │
-│  mindflow-gtd.onrender.com  │
+│  defrago.onrender.com  │
 └──────────┬──────────────────┘
            ↓ PostgreSQL (SSL)
 ┌─────────────────────────────┐
@@ -58,8 +58,8 @@
 |---------|-----|
 | Render ダッシュボード | https://dashboard.render.com |
 | Neon ダッシュボード | https://console.neon.tech |
-| GitHub リポジトリ | https://github.com/teppei19980914/mindflow |
-| 本番アプリ | https://mindflow-gtd.onrender.com |
+| GitHub リポジトリ | https://github.com/teppei19980914/Defrago |
+| 本番アプリ | https://defrago.onrender.com |
 
 ---
 
@@ -115,7 +115,7 @@ run_local.bat をダブルクリック
 uv sync --extra dev
 
 # サーバー起動
-SECRET_KEY=dev DATABASE_URL=sqlite:///./dev.db uv run mindflow-web
+SECRET_KEY=dev DATABASE_URL=sqlite:///./dev.db uv run defrago-web
 
 # テスト実行
 uv run pytest tests/ -v
@@ -183,7 +183,7 @@ git push origin main
 
 ### 手動デプロイ
 
-Renderダッシュボード → mindflow-gtd → **Manual Deploy** → **Deploy latest commit**
+Renderダッシュボード → defrago → **Manual Deploy** → **Deploy latest commit**
 
 ### Dockerビルド
 
@@ -204,7 +204,7 @@ CMD ["uv", "run", "uvicorn", "study_python.gtd.web.app:app", "--host", "0.0.0.0"
 
 - [ ] GitHub Actions CI が緑（全テストパス）
 - [ ] Renderのデプロイステータスが「Live」
-- [ ] ログインページが表示される（https://mindflow-gtd.onrender.com/login）
+- [ ] ログインページが表示される（https://defrago.onrender.com/login）
 - [ ] 新規ユーザー登録ができる
 - [ ] タスク登録→明確化（4分類）→実行の一連フローが動作する
 - [ ] ゴミ箱への移動・復元・物理削除が動作する
@@ -431,7 +431,7 @@ logs/ ディレクトリのファイルを確認
 
 | 項目 | 確認方法 |
 |------|---------|
-| アプリ死活 | https://mindflow-gtd.onrender.com/login にアクセス |
+| アプリ死活 | https://defrago.onrender.com/login にアクセス |
 | DB接続 | ログイン後にダッシュボードが表示されるか |
 | CI状態 | GitHub Actions タブ |
 | DB容量 | Neonダッシュボード → Storage |
@@ -549,7 +549,7 @@ gh pr create --title "release: v1.1.0" --body "## リリース内容
 #### Step 8: デプロイ確認
 
 1. Renderダッシュボードでデプロイステータスが「Live」になるのを待つ
-2. https://mindflow-gtd.onrender.com/login にアクセスして動作確認
+2. https://defrago.onrender.com/login にアクセスして動作確認
 3. 新規ユーザーで登録し、受信ボックスに通知が届くことを確認
 
 #### Step 9: ブランチ削除
