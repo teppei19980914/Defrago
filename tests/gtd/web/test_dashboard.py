@@ -21,15 +21,14 @@ class TestDashboard:
         assert response.status_code == 200
         assert "クリア" in response.text
 
-    def test_dashboard_guides_to_inbox(self, client):
-        """Inboxにアイテムがあれば収集フェーズへ誘導."""
+    def test_dashboard_guides_to_clarification_when_unclassified(self, client):
+        """未分類のInboxアイテムがあれば明確化フェーズへ誘導."""
         client.post("/inbox/add", data={"title": "テスト"})
-        response = client.get("/", follow_redirects=True)
-        assert "書き出す" in response.text
-
-    def test_dashboard_guides_to_clarification(self, client):
-        """明確化待ちがあれば明確化フェーズへ誘導."""
-        client.post("/inbox/add", data={"title": "テスト"})
-        client.post("/inbox/process_all")
         response = client.get("/", follow_redirects=True)
         assert "明確化する" in response.text
+
+    def test_dashboard_guides_to_execution_when_classified(self, client):
+        """分類済みアイテムがあれば実行フェーズへ誘導."""
+        client.post("/inbox/add", data={"title": "即実行タスク", "tag": "do_now"})
+        response = client.get("/", follow_redirects=True)
+        assert "実行する" in response.text

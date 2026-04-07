@@ -81,7 +81,7 @@ def _get_tasks_context(
     }
 
 
-VALID_TAG_FILTERS = {"all", "delegation", "calendar", "do_now", "task"}
+VALID_TAG_FILTERS = {"all", "delegation", "do_now", "task"}
 
 
 @router.get("", response_class=HTMLResponse)

@@ -154,7 +154,7 @@ class TestTenantIsolation:
             title="Aのタスク",
             tag=Tag.TASK,
             status=TaskStatus.NOT_STARTED.value,
-            item_status=ItemStatus.SOMEDAY,
+            item_status=ItemStatus.INBOX,
         )
         repo_a.add(item)
         repo_a.flush_to_db()
@@ -165,3 +165,76 @@ class TestTenantIsolation:
         repo_b = DbGtdRepository(session2, "user-b")
         assert len(repo_b.get_by_tag(Tag.TASK)) == 0
         session2.close()
+
+    def test_trash_isolation(self):
+        """ゴミ箱内のアイテムも他ユーザーから見えない."""
+        from study_python.gtd.logic.collection import CollectionLogic
+
+        factory = _setup_db()
+
+        session_a = factory()
+        repo_a = DbGtdRepository(session_a, "user-a")
+        col_a = CollectionLogic(repo_a)
+        item_a = col_a.add_to_inbox("Aのタスク")
+        col_a.move_to_trash(item_a.id)
+        repo_a.flush_to_db()
+        session_a.commit()
+        session_a.close()
+
+        session_b = factory()
+        repo_b = DbGtdRepository(session_b, "user-b")
+        assert len(repo_b.get_trash()) == 0
+        assert repo_b.get(item_a.id) is None
+        session_b.close()
+
+    def test_restore_other_user_item_fails(self):
+        """他ユーザーのゴミ箱アイテムを復元できない."""
+        from study_python.gtd.logic.collection import CollectionLogic
+        from study_python.gtd.logic.trash import TrashLogic
+
+        factory = _setup_db()
+
+        session_a = factory()
+        repo_a = DbGtdRepository(session_a, "user-a")
+        col_a = CollectionLogic(repo_a)
+        item_a = col_a.add_to_inbox("Aのタスク")
+        col_a.move_to_trash(item_a.id)
+        repo_a.flush_to_db()
+        session_a.commit()
+        item_a_id = item_a.id
+        session_a.close()
+
+        session_b = factory()
+        repo_b = DbGtdRepository(session_b, "user-b")
+        trash_b = TrashLogic(repo_b)
+        result = trash_b.restore(item_a_id)
+        assert result is None
+        session_b.close()
+
+    def test_user_a_trash_count_does_not_include_user_b(self):
+        """ユーザーごとのゴミ箱カウントが分離されている."""
+        from study_python.gtd.logic.collection import CollectionLogic
+
+        factory = _setup_db()
+
+        session_a = factory()
+        repo_a = DbGtdRepository(session_a, "user-a")
+        col_a = CollectionLogic(repo_a)
+        for i in range(3):
+            item = col_a.add_to_inbox(f"Aのタスク{i}")
+            col_a.move_to_trash(item.id)
+        repo_a.flush_to_db()
+        session_a.commit()
+        session_a.close()
+
+        session_b = factory()
+        repo_b = DbGtdRepository(session_b, "user-b")
+        col_b = CollectionLogic(repo_b)
+        item_b = col_b.add_to_inbox("Bのタスク")
+        col_b.move_to_trash(item_b.id)
+        repo_b.flush_to_db()
+        session_b.commit()
+
+        # ユーザーBのゴミ箱には自分のアイテム1件のみ
+        assert len(repo_b.get_trash()) == 1
+        session_b.close()

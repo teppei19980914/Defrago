@@ -27,7 +27,7 @@ class ReviewLogic:
     def get_review_items(self) -> list[GtdItem]:
         """見直し対象のアイテムを返す.
 
-        完了タスクとプロジェクトタスクが対象。
+        完了タスクとプロジェクトタスクが対象（ゴミ箱内は除外）。
 
         Returns:
             見直し対象アイテムのリスト。
@@ -36,6 +36,8 @@ class ReviewLogic:
 
     def delete_item(self, item_id: str) -> GtdItem | None:
         """アイテムを物理削除する.
+
+        見直しフェーズからの削除はゴミ箱を経由せず、即座に物理削除する。
 
         Args:
             item_id: 削除するアイテムのID。
@@ -51,7 +53,7 @@ class ReviewLogic:
     def move_to_inbox(self, item_id: str) -> GtdItem | None:
         """アイテムをタスクからInboxに戻す.
 
-        タグ、ステータス、Context、重要度/緊急度をリセットする。
+        タグ、ステータス、Contextをリセットする。
         プロジェクトとの紐づけ（parent_project_id, order）は保持する。
 
         Args:
@@ -72,8 +74,6 @@ class ReviewLogic:
         item.locations = []
         item.time_estimate = None
         item.energy = None
-        item.importance = None
-        item.urgency = None
         item.touch()
 
         logger.info(f"Moved back to inbox: '{item.title}' (id={item.id})")

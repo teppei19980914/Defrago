@@ -3,7 +3,7 @@
 import pytest
 
 from study_python.gtd.logic.collection import CollectionLogic
-from study_python.gtd.models import GtdItem, ItemStatus
+from study_python.gtd.models import GtdItem, ItemStatus, Tag
 from study_python.gtd.web.db_repository import DbGtdRepository
 
 
@@ -19,7 +19,28 @@ class TestCollectionLogic:
         item = logic.add_to_inbox("新しいアイテム")
         assert item.title == "新しいアイテム"
         assert item.item_status == ItemStatus.INBOX
+        assert item.tag is None
         assert len(repo.items) == 1
+
+    def test_add_to_inbox_with_tag_classifies(self, logic: CollectionLogic):
+        item = logic.add_to_inbox("即実行タスク", tag=Tag.DO_NOW)
+        assert item.tag == Tag.DO_NOW
+        assert item.status == "not_started"
+
+    def test_add_to_inbox_with_project_tag(self, logic: CollectionLogic):
+        item = logic.add_to_inbox("プロジェクト", tag=Tag.PROJECT)
+        assert item.tag == Tag.PROJECT
+        assert item.status is None
+
+    def test_add_to_inbox_with_task_tag(self, logic: CollectionLogic):
+        item = logic.add_to_inbox("タスク", tag=Tag.TASK)
+        assert item.tag == Tag.TASK
+        assert item.status == "not_started"
+
+    def test_add_to_inbox_with_delegation_tag(self, logic: CollectionLogic):
+        item = logic.add_to_inbox("委任", tag=Tag.DELEGATION)
+        assert item.tag == Tag.DELEGATION
+        assert item.status == "not_started"
 
     def test_add_to_inbox_with_note(self, logic: CollectionLogic):
         item = logic.add_to_inbox("アイテム", note="メモ")
@@ -38,92 +59,35 @@ class TestCollectionLogic:
         with pytest.raises(ValueError, match="タイトルは必須です"):
             logic.add_to_inbox("   ")
 
-    def test_delete_item(self, logic: CollectionLogic, repo: DbGtdRepository):
+    def test_move_to_trash(self, logic: CollectionLogic, repo: DbGtdRepository):
         item = logic.add_to_inbox("削除対象")
-        result = logic.delete_item(item.id)
+        result = logic.move_to_trash(item.id)
         assert result is not None
-        assert result.title == "削除対象"
-        assert len(repo.items) == 0
+        assert result.item_status == ItemStatus.TRASH
+        assert result.deleted_at != ""
+        # アイテムは残る（物理削除されない）
+        assert len(repo.items) == 1
 
-    def test_delete_nonexistent_item(self, logic: CollectionLogic):
-        result = logic.delete_item("nonexistent")
-        assert result is None
-
-    def test_move_to_reference(self, logic: CollectionLogic):
-        item = logic.add_to_inbox("参考資料にする")
-        result = logic.move_to_reference(item.id)
-        assert result is not None
-        assert result.item_status == ItemStatus.REFERENCE
-
-    def test_move_to_reference_nonexistent(self, logic: CollectionLogic):
-        result = logic.move_to_reference("nonexistent")
-        assert result is None
-
-    def test_move_to_someday(self, logic: CollectionLogic):
-        item = logic.add_to_inbox("いつかやる")
-        result = logic.move_to_someday(item.id)
-        assert result is not None
-        assert result.item_status == ItemStatus.SOMEDAY
-
-    def test_move_to_someday_nonexistent(self, logic: CollectionLogic):
-        result = logic.move_to_someday("nonexistent")
+    def test_move_to_trash_nonexistent(self, logic: CollectionLogic):
+        result = logic.move_to_trash("nonexistent")
         assert result is None
 
     def test_get_inbox_items(self, logic: CollectionLogic):
         logic.add_to_inbox("アイテム1")
         logic.add_to_inbox("アイテム2")
         item3 = logic.add_to_inbox("アイテム3")
-        logic.move_to_someday(item3.id)
+        logic.move_to_trash(item3.id)
 
         inbox_items = logic.get_inbox_items()
         assert len(inbox_items) == 2
 
-    def test_get_someday_items(self, logic: CollectionLogic):
-        item = logic.add_to_inbox("いつか")
-        logic.move_to_someday(item.id)
+    def test_get_unclassified_inbox_items(self, logic: CollectionLogic):
+        logic.add_to_inbox("未分類1")
+        logic.add_to_inbox("未分類2")
+        logic.add_to_inbox("分類済み", tag=Tag.DO_NOW)
 
-        someday_items = logic.get_someday_items()
-        assert len(someday_items) == 1
-        assert someday_items[0].title == "いつか"
-
-    def test_get_reference_items(self, logic: CollectionLogic):
-        item = logic.add_to_inbox("参考")
-        logic.move_to_reference(item.id)
-
-        ref_items = logic.get_reference_items()
-        assert len(ref_items) == 1
-        assert ref_items[0].title == "参考"
-
-
-class TestProcessAllInbox:
-    """process_all_inboxのテスト."""
-
-    def test_process_all_moves_to_someday(
-        self, logic: CollectionLogic, repo: DbGtdRepository
-    ):
-        """全Inboxアイテムがsomeedayに移動する."""
-        logic.add_to_inbox("アイテム1")
-        logic.add_to_inbox("アイテム2")
-        count = logic.process_all_inbox()
-        assert count == 2
-        assert len(logic.get_inbox_items()) == 0
-        assert len(logic.get_someday_items()) == 2
-
-    def test_process_all_empty_inbox(self, logic: CollectionLogic):
-        """空Inboxの場合は0を返す."""
-        count = logic.process_all_inbox()
-        assert count == 0
-
-    def test_process_all_ignores_non_inbox(
-        self, logic: CollectionLogic, repo: DbGtdRepository
-    ):
-        """Inbox以外のアイテムは影響を受けない."""
-        item = logic.add_to_inbox("参考")
-        logic.move_to_reference(item.id)
-        logic.add_to_inbox("処理対象")
-        count = logic.process_all_inbox()
-        assert count == 1
-        assert len(logic.get_reference_items()) == 1
+        unclassified = logic.get_unclassified_inbox_items()
+        assert len(unclassified) == 2
 
 
 class TestReorderItem:

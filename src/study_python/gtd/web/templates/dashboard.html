@@ -27,37 +27,5 @@
             <div class="stat-label">{{ labels.dashboard.stat_total }}</div>
         </div>
     </div>
-
-    <h3 class="section-title">{{ labels.dashboard.matrix_title }}</h3>
-    <div class="matrix-grid">
-        <div class="matrix-cell q2">
-            <div class="matrix-label">{{ labels.dashboard.q2_label }}</div>
-            <div class="matrix-desc">{{ labels.dashboard.q2_desc }}</div>
-            {% for item in quadrants.q2_not_urgent_important %}
-            <div class="matrix-item">{{ item.title }}</div>
-            {% endfor %}
-        </div>
-        <div class="matrix-cell q1">
-            <div class="matrix-label">{{ labels.dashboard.q1_label }}</div>
-            <div class="matrix-desc">{{ labels.dashboard.q1_desc }}</div>
-            {% for item in quadrants.q1_urgent_important %}
-            <div class="matrix-item">{{ item.title }}</div>
-            {% endfor %}
-        </div>
-        <div class="matrix-cell q4">
-            <div class="matrix-label">{{ labels.dashboard.q4_label }}</div>
-            <div class="matrix-desc">{{ labels.dashboard.q4_desc }}</div>
-            {% for item in quadrants.q4_not_urgent_not_important %}
-            <div class="matrix-item">{{ item.title }}</div>
-            {% endfor %}
-        </div>
-        <div class="matrix-cell q3">
-            <div class="matrix-label">{{ labels.dashboard.q3_label }}</div>
-            <div class="matrix-desc">{{ labels.dashboard.q3_desc }}</div>
-            {% for item in quadrants.q3_urgent_not_important %}
-            <div class="matrix-item">{{ item.title }}</div>
-            {% endfor %}
-        </div>
-    </div>
 </div>
 {% endblock %}

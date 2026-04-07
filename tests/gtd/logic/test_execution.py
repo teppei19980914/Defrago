@@ -4,7 +4,6 @@ import pytest
 
 from study_python.gtd.logic.execution import ExecutionLogic
 from study_python.gtd.models import (
-    CalendarStatus,
     DelegationStatus,
     DoNowStatus,
     GtdItem,
@@ -31,7 +30,7 @@ def _create_task(
         status = TaskStatus.NOT_STARTED.value if tag == Tag.TASK else "not_started"
     item = GtdItem(
         title=title,
-        item_status=ItemStatus.SOMEDAY,
+        item_status=ItemStatus.INBOX,
         tag=tag,
         status=status,
     )
@@ -51,16 +50,24 @@ class TestExecutionLogic:
         assert len(active) == 1
         assert active[0].title == "未着手"
 
-    def test_get_active_tasks_includes_multiple_tags(
+    def test_get_active_tasks_includes_3_tags(
         self, logic: ExecutionLogic, repo: DbGtdRepository
     ):
         _create_task(repo, "タスク", tag=Tag.TASK)
-        _create_task(repo, "依頼", tag=Tag.DELEGATION)
+        _create_task(repo, "委任", tag=Tag.DELEGATION)
         _create_task(repo, "即実行", tag=Tag.DO_NOW)
-        _create_task(repo, "カレンダー", tag=Tag.CALENDAR)
 
         active = logic.get_active_tasks()
-        assert len(active) == 4
+        assert len(active) == 3
+
+    def test_get_active_tasks_excludes_trash(
+        self, logic: ExecutionLogic, repo: DbGtdRepository
+    ):
+        item = _create_task(repo, "ゴミ箱内")
+        item.item_status = ItemStatus.TRASH
+
+        active = logic.get_active_tasks()
+        assert len(active) == 0
 
     def test_update_status_task(self, logic: ExecutionLogic, repo: DbGtdRepository):
         item = _create_task(repo)
@@ -113,27 +120,6 @@ class TestExecutionLogic:
         repo.add(item)
         result = logic.update_status(item.id, "done")
         assert result is None
-
-    def test_update_status_calendar_registered_auto_deletes(
-        self, logic: ExecutionLogic, repo: DbGtdRepository
-    ):
-        """カレンダー登録済みにするとアイテムが自動削除される."""
-        item = _create_task(repo, "予定", tag=Tag.CALENDAR)
-        result = logic.update_status(item.id, CalendarStatus.REGISTERED.value)
-        assert result is not None
-        assert result.status == CalendarStatus.REGISTERED.value
-        # リポジトリから削除されていること
-        assert repo.get(item.id) is None
-
-    def test_update_status_calendar_not_started_not_deleted(
-        self, logic: ExecutionLogic, repo: DbGtdRepository
-    ):
-        """カレンダーでもREGISTERED以外では削除されない."""
-        item = _create_task(repo, "予定", tag=Tag.CALENDAR)
-        result = logic.update_status(item.id, CalendarStatus.NOT_STARTED.value)
-        assert result is not None
-        # リポジトリに残っていること
-        assert repo.get(item.id) is not None
 
     def test_get_available_statuses_task(
         self, logic: ExecutionLogic, repo: DbGtdRepository

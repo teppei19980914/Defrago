@@ -1,0 +1,37 @@
+{% if items %}
+<div class="trash-list">
+    {% for item in items %}
+    <div class="trash-card">
+        <div class="trash-card-header">
+            <span class="trash-card-title">{{ item.title }}</span>
+            {% if item.tag %}
+            <span class="tag-badge tag-{{ item.tag.value }}">
+                {{ labels.execution.tags.get(item.tag.value, item.tag.value) }}
+            </span>
+            {% endif %}
+        </div>
+        <div class="trash-card-meta">
+            <span class="trash-deleted-at">
+                &#128465; {{ labels.trash.remaining_prefix }}{{ days_map.get(item.id, 0) }}{{ labels.trash.remaining_suffix }}
+            </span>
+        </div>
+        <div class="trash-card-actions">
+            <button hx-post="/trash/{{ item.id }}/restore" hx-target="#item-list" hx-swap="innerHTML"
+                    class="btn-sm btn-secondary">
+                &#8634; {{ labels.trash.restore_button }}
+            </button>
+            <button hx-post="/trash/{{ item.id }}/delete" hx-target="#item-list" hx-swap="innerHTML"
+                    hx-confirm="{{ labels.trash.confirm_delete }}"
+                    class="btn-sm btn-danger">
+                &#10005; {{ labels.trash.delete_permanently_button }}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="modal-empty">
+    <span class="modal-empty-icon">&#128465;</span>
+    <p>{{ labels.trash.empty_message }}</p>
+</div>
+{% endif %}

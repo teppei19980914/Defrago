@@ -1,4 +1,8 @@
-"""明確化ルーター."""
+"""明確化ルーター.
+
+エッセンシャル思考に基づき、Inboxの未分類アイテムを4つのタグに分類する。
+質問形式（Yes/No）を廃止し、4つのボタンによる即時分類とスキップ・削除を提供する。
+"""
 
 from __future__ import annotations
 
@@ -6,10 +10,13 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
 from study_python.gtd.logic.clarification import ClarificationLogic
-from study_python.gtd.models import EnergyLevel, Location, TimeEstimate
+from study_python.gtd.logic.collection import CollectionLogic
 from study_python.gtd.web.db_repository import DbGtdRepository
-from study_python.gtd.web.dependencies import get_repository, require_auth
-from study_python.gtd.web.labels import load_labels
+from study_python.gtd.web.dependencies import (
+    get_repository,
+    require_auth,
+    validate_item_id,
+)
 from study_python.gtd.web.template_engine import templates
 
 
@@ -19,16 +26,8 @@ router = APIRouter(
     dependencies=[Depends(require_auth)],
 )
 
-_cl = load_labels()["clarification"]
-QUESTIONS = [_cl["question1"], _cl["question2"], _cl["question3"], _cl["question4"]]
 
-
-def _get_context(
-    request: Request,
-    repo: DbGtdRepository,
-    step: int = 0,
-    show_context_form: bool = False,
-) -> dict[str, object]:
+def _get_context(request: Request, repo: DbGtdRepository) -> dict[str, object]:
     logic = ClarificationLogic(repo)
     items = logic.get_pending_items()
     current = items[0] if items else None
@@ -36,34 +35,9 @@ def _get_context(
         "active_page": "/clarification",
         "items": items,
         "current": current,
-        "step": step,
-        "question": QUESTIONS[step] if step < len(QUESTIONS) else "",
         "total": len(items),
-        "show_context_form": show_context_form,
-        "locations": [
-            (loc.value, name)
-            for loc, name in zip(
-                Location,
-                [_cl["locations"][loc_.value] for loc_ in Location],
-                strict=False,
-            )
-        ],
-        "time_estimates": [
-            (te.value, name)
-            for te, name in zip(
-                TimeEstimate,
-                [_cl["time_estimates"][t.value] for t in TimeEstimate],
-                strict=False,
-            )
-        ],
-        "energy_levels": [
-            (el.value, name)
-            for el, name in zip(
-                EnergyLevel,
-                [_cl["energy_levels"][e.value] for e in EnergyLevel],
-                strict=False,
-            )
-        ],
+        "remaining": len(items),
+        "index": 0 if not items else 1,
     }
 
 
@@ -78,94 +52,86 @@ async def clarification_page(
     )
 
 
-@router.post("/answer", response_class=HTMLResponse)
-async def answer(
+@router.post("/{item_id}/classify/{tag}", response_class=HTMLResponse)
+async def classify(
+    item_id: str,
+    tag: str,
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """ウィザードの回答を処理する（HTMX）."""
-    form = await request.form()
-    item_id = str(form.get("item_id", ""))
-    step = int(form.get("step", "0"))
-    choice = str(form.get("choice", ""))
+    """アイテムを4分類のいずれかに分類する（HTMX）.
 
+    tag: delegation, project, do_now, task のいずれか
+    """
+    validate_item_id(item_id)
     logic = ClarificationLogic(repo)
 
-    if choice == "yes":
-        if step == 0:
-            return templates.TemplateResponse(
-                request,
-                "partials/clarification_step.html",
-                _get_context(request, repo, step=1),
-            )
-        elif step == 1:
-            logic.classify_as_calendar(item_id)
-            repo.flush_to_db()
-        elif step == 2:
-            logic.classify_as_project(item_id)
-            repo.flush_to_db()
-        elif step == 3:
-            logic.classify_as_do_now(item_id)
-            repo.flush_to_db()
-    elif choice == "no":
-        if step == 0:
-            logic.classify_as_delegation(item_id)
-            repo.flush_to_db()
-        elif step == 1:
-            return templates.TemplateResponse(
-                request,
-                "partials/clarification_step.html",
-                _get_context(request, repo, step=2),
-            )
-        elif step == 2:
-            return templates.TemplateResponse(
-                request,
-                "partials/clarification_step.html",
-                _get_context(request, repo, step=3),
-            )
-        elif step == 3:
-            return templates.TemplateResponse(
-                request,
-                "partials/clarification_step.html",
-                _get_context(request, repo, step=step, show_context_form=True),
-            )
+    classifiers = {
+        "delegation": logic.classify_as_delegation,
+        "project": logic.classify_as_project,
+        "do_now": logic.classify_as_do_now,
+        "task": logic.classify_as_task,
+    }
+    classifier = classifiers.get(tag)
+    if classifier is not None:
+        classifier(item_id)
+        repo.flush_to_db()
 
     return templates.TemplateResponse(
         request,
         "partials/clarification_step.html",
-        _get_context(request, repo, step=0),
+        _get_context(request, repo),
     )
 
 
-@router.post("/classify_task", response_class=HTMLResponse)
-async def classify_task(
+@router.post("/{item_id}/skip", response_class=HTMLResponse)
+async def skip_item(
+    item_id: str,
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """タスクとして分類する（Context付き、HTMX）."""
-    form = await request.form()
-    item_id = str(form.get("item_id", ""))
-    location_values = form.getlist("locations")
-    time_val = str(form.get("time_estimate", "30min"))
-    energy_val = str(form.get("energy", "medium"))
+    """アイテムをスキップして次のアイテムに進む（HTMX）.
 
-    locations = (
-        [Location(str(v)) for v in location_values]
-        if location_values
-        else [Location.DESK]
-    )
+    スキップしたアイテムはInboxに残ったまま次のアイテムを表示する。
+    現在のアイテムを末尾に移動するため、updated_atを更新する。
+    """
+    validate_item_id(item_id)
+    item = repo.get(item_id)
+    if item is not None:
+        item.touch()
+        repo.flush_to_db()
 
+    # スキップしたアイテムは末尾に回すため、明確化対象から除外する
     logic = ClarificationLogic(repo)
-    logic.classify_as_task(
-        item_id,
-        locations=locations,
-        time_estimate=TimeEstimate(time_val),
-        energy=EnergyLevel(energy_val),
+    items = [i for i in logic.get_pending_items() if i.id != item_id]
+    current = items[0] if items else None
+    context = {
+        "active_page": "/clarification",
+        "items": items,
+        "current": current,
+        "total": len(items),
+        "remaining": len(items),
+        "index": 0 if not items else 1,
+    }
+    return templates.TemplateResponse(
+        request, "partials/clarification_step.html", context
     )
+
+
+@router.post("/{item_id}/trash", response_class=HTMLResponse)
+async def trash_item(
+    item_id: str,
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """アイテムをゴミ箱に移動する（HTMX）."""
+    validate_item_id(item_id)
+    collection = CollectionLogic(repo)
+    collection.move_to_trash(item_id)
     repo.flush_to_db()
 
     return templates.TemplateResponse(
         request,
         "partials/clarification_step.html",
-        _get_context(request, repo, step=0),
+        _get_context(request, repo),
     )

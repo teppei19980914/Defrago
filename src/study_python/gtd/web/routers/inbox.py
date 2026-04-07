@@ -1,4 +1,8 @@
-"""Inboxルーター."""
+"""Inboxルーター.
+
+エッセンシャル思考に基づき、入力時に直接分類できる4つのボタンを提供する。
+分類されない場合はInboxに溜めて、後で「まとめて分類」できる。
+"""
 
 from __future__ import annotations
 
@@ -6,6 +10,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from study_python.gtd.logic.collection import CollectionLogic
+from study_python.gtd.models import Tag
 from study_python.gtd.web.db_repository import DbGtdRepository
 from study_python.gtd.web.dependencies import (
     get_repository,
@@ -19,6 +24,8 @@ from study_python.gtd.web.template_engine import templates
 router = APIRouter(
     prefix="/inbox", tags=["inbox"], dependencies=[Depends(require_auth)]
 )
+
+_VALID_TAGS = {tag.value for tag in Tag}
 
 
 def _sort_items_by_project(items: list) -> list:
@@ -39,15 +46,15 @@ def _sort_items_by_project(items: list) -> list:
 
 def _get_inbox_context(request: Request, repo: DbGtdRepository) -> dict[str, object]:
     logic = CollectionLogic(repo)
-    items = _sort_items_by_project(logic.get_inbox_items())
+    all_items = logic.get_inbox_items()
+    items = _sort_items_by_project(all_items)
+    unclassified_count = sum(1 for i in all_items if i.tag is None)
 
-    # プロジェクトグループ情報を構築
     project_groups: dict[str, str] = {}
     for item in items:
         if item.parent_project_id and item.parent_project_id not in project_groups:
             project_groups[item.parent_project_id] = item.parent_project_title
 
-    # アクション: 削除のみ（プロジェクト派生はリオーダー+削除）
     actions_map = {}
     for item in items:
         if item.parent_project_id is not None:
@@ -72,6 +79,7 @@ def _get_inbox_context(request: Request, repo: DbGtdRepository) -> dict[str, obj
         "items": items,
         "actions_map": actions_map,
         "project_groups": project_groups,
+        "unclassified_count": unclassified_count,
         "active_page": "/inbox",
     }
 
@@ -92,13 +100,20 @@ async def add_item(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """アイテムを追加する（HTMX）."""
+    """アイテムを追加する（HTMX）.
+
+    formのtagパラメータが指定されていれば直接分類する。
+    指定されていなければ未分類でInboxに登録する。
+    """
     form = await request.form()
     title = str(form.get("title", "")).strip()
+    tag_value = str(form.get("tag", "")).strip()
+
     logic = CollectionLogic(repo)
     if title:
         try:
-            logic.add_to_inbox(title)
+            tag = Tag(tag_value) if tag_value in _VALID_TAGS else None
+            logic.add_to_inbox(title, tag=tag)
             repo.flush_to_db()
         except ValueError:
             pass
@@ -113,10 +128,10 @@ async def delete_item(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """アイテムを削除する（HTMX）."""
+    """アイテムをゴミ箱に移動する（HTMX）."""
     validate_item_id(item_id)
     logic = CollectionLogic(repo)
-    logic.delete_item(item_id)
+    logic.move_to_trash(item_id)
     repo.flush_to_db()
     return templates.TemplateResponse(
         request, "partials/item_list.html", _get_inbox_context(request, repo)
@@ -127,10 +142,11 @@ async def delete_item(
 async def process_all(
     repo: DbGtdRepository = Depends(get_repository),
 ) -> RedirectResponse:
-    """Inbox全アイテムを明確化フェーズへ送り、明確化画面にリダイレクトする."""
-    logic = CollectionLogic(repo)
-    logic.process_all_inbox()
-    repo.flush_to_db()
+    """明確化フェーズへリダイレクトする.
+
+    Inbox内の未分類アイテムをそのまま明確化フェーズで処理する。
+    中間状態（someday等）への移動は行わない。
+    """
     return RedirectResponse(url="/clarification", status_code=303)
 
 

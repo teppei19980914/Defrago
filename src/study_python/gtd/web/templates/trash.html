@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+    <h2 class="page-title">{{ labels.trash.title }}</h2>
+    <p class="page-desc">{{ labels.trash.description }}</p>
+    <div id="item-list">
+        {% include "partials/trash_list.html" %}
+    </div>
+</div>
+{% endblock %}

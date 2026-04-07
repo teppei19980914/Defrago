@@ -77,8 +77,6 @@ class TestReviewLogic:
 
     def test_move_to_inbox(self, logic: ReviewLogic, repo: DbGtdRepository):
         item = _create_task(repo, "Inboxに戻す", status=TaskStatus.DONE.value)
-        item.importance = 8
-        item.urgency = 3
 
         result = logic.move_to_inbox(item.id)
         assert result is not None
@@ -88,8 +86,6 @@ class TestReviewLogic:
         assert result.locations == []
         assert result.time_estimate is None
         assert result.energy is None
-        assert result.importance is None
-        assert result.urgency is None
 
     def test_move_to_inbox_nonexistent(self, logic: ReviewLogic):
         result = logic.move_to_inbox("nonexistent")
@@ -138,8 +134,6 @@ class TestReviewLogic:
         assert sub.item_status == ItemStatus.INBOX
         assert sub.tag is None
         assert sub.status is None
-        assert sub.importance is None
-        assert sub.urgency is None
 
     def test_decompose_project_item_not_found(self, logic: ReviewLogic):
         with pytest.raises(ValueError, match="Item not found"):

@@ -12,36 +12,32 @@ from enum import StrEnum
 
 
 class ItemStatus(StrEnum):
-    """Inbox内アイテムの分類状態."""
+    """アイテムの状態."""
 
     INBOX = "inbox"
     SOMEDAY = "someday"
     REFERENCE = "reference"
+    TRASH = "trash"
 
 
 class Tag(StrEnum):
-    """タスクのタグ（明確化フェーズで割当）."""
+    """タスクのタグ（明確化フェーズで割当）.
+
+    エッセンシャル思考に基づき4分類で構成される。
+    """
 
     DELEGATION = "delegation"
-    CALENDAR = "calendar"
     PROJECT = "project"
     DO_NOW = "do_now"
     TASK = "task"
 
 
 class DelegationStatus(StrEnum):
-    """依頼タグの状況."""
+    """委任タグの状況."""
 
     NOT_STARTED = "not_started"
     WAITING = "waiting"
     DONE = "done"
-
-
-class CalendarStatus(StrEnum):
-    """カレンダータグの状況."""
-
-    NOT_STARTED = "not_started"
-    REGISTERED = "registered"
 
 
 class DoNowStatus(StrEnum):
@@ -84,11 +80,8 @@ class EnergyLevel(StrEnum):
 
 
 # タグごとのステータスEnumマッピング
-TAG_STATUS_MAP: dict[
-    Tag, type[DelegationStatus | CalendarStatus | DoNowStatus | TaskStatus]
-] = {
+TAG_STATUS_MAP: dict[Tag, type[DelegationStatus | DoNowStatus | TaskStatus]] = {
     Tag.DELEGATION: DelegationStatus,
-    Tag.CALENDAR: CalendarStatus,
     Tag.DO_NOW: DoNowStatus,
     Tag.TASK: TaskStatus,
 }
@@ -96,7 +89,7 @@ TAG_STATUS_MAP: dict[
 
 def get_status_enum_for_tag(
     tag: Tag,
-) -> type[DelegationStatus | CalendarStatus | DoNowStatus | TaskStatus] | None:
+) -> type[DelegationStatus | DoNowStatus | TaskStatus] | None:
     """タグに対応するステータスEnumクラスを返す.
 
     Args:
@@ -117,25 +110,7 @@ def _now_iso() -> str:
 class GtdItem:
     """GTDアイテムのデータモデル.
 
-    Inbox登録からタスク化、完了までのライフサイクルを管理する。
-
-    Attributes:
-        id: 一意識別子（UUID）。
-        title: アイテムのタイトル。
-        created_at: 作成日時（ISO 8601形式）。
-        updated_at: 更新日時（ISO 8601形式）。
-        item_status: Inbox内の分類状態。
-        tag: 明確化フェーズで割り当てられるタグ。
-        status: タグごとに異なるステータス値。
-        locations: タスク実施場所（タグがTASKの場合のみ、複数選択可）。
-        time_estimate: 所要時間の見積もり（タグがTASKの場合のみ）。
-        energy: 必要なエネルギーレベル（タグがTASKの場合のみ）。
-        importance: 重要度（1-10、タグがPROJECT以外の場合）。
-        urgency: 緊急度（1-10、タグがPROJECT以外の場合）。
-        parent_project_id: 分解元プロジェクトのID。
-        parent_project_title: 分解元プロジェクトのタイトル。
-        order: プロジェクト内の順序（0始まり）。
-        note: メモ。
+    Inbox登録から分類、実行、見直しまでのライフサイクルを管理する。
     """
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -144,10 +119,10 @@ class GtdItem:
     created_at: str = field(default_factory=_now_iso)
     updated_at: str = field(default_factory=_now_iso)
 
-    # 収集フェーズ
+    # アイテムの状態
     item_status: ItemStatus = ItemStatus.INBOX
 
-    # 明確化フェーズ
+    # 明確化フェーズで設定されるタグ
     tag: Tag | None = None
     status: str | None = None
 
@@ -155,10 +130,6 @@ class GtdItem:
     locations: list[Location] = field(default_factory=list)
     time_estimate: TimeEstimate | None = None
     energy: EnergyLevel | None = None
-
-    # 整理フェーズ（tag!=PROJECTの場合のみ）
-    importance: int | None = None
-    urgency: int | None = None
 
     # プロジェクト分解時の親情報
     parent_project_id: str | None = None
@@ -172,6 +143,9 @@ class GtdItem:
     is_next_action: bool = False
     deadline: str = ""
 
+    # ゴミ箱移動日時（item_status=TRASH時のみ設定）
+    deleted_at: str = ""
+
     # メモ
     note: str = ""
 
@@ -179,8 +153,8 @@ class GtdItem:
         """updated_atを現在時刻に更新する."""
         self.updated_at = _now_iso()
 
-    def is_task(self) -> bool:
-        """タスク化済み（タグが割り当てられている）かを返す."""
+    def is_classified(self) -> bool:
+        """分類済み（タグが割り当てられている）かを返す."""
         return self.tag is not None
 
     def is_done(self) -> bool:
@@ -190,19 +164,14 @@ class GtdItem:
         status_enum = get_status_enum_for_tag(self.tag)
         if status_enum is None:
             return False
-        done_values = {"done"}
-        return self.status in done_values
-
-    def needs_organization(self) -> bool:
-        """整理（重要度/緊急度設定）が必要かを返す."""
-        if self.tag is None or self.tag == Tag.PROJECT:
-            return False
-        return self.importance is None or self.urgency is None
+        return self.status == "done"
 
     def needs_review(self) -> bool:
         """見直し対象かを返す."""
-        if self.is_done() or self.tag == Tag.PROJECT:
-            return True
-        return (
-            self.tag == Tag.CALENDAR and self.status == CalendarStatus.REGISTERED.value
-        )
+        if self.item_status == ItemStatus.TRASH:
+            return False
+        return self.is_done() or self.tag == Tag.PROJECT
+
+    def is_in_trash(self) -> bool:
+        """ゴミ箱内のアイテムかを返す."""
+        return self.item_status == ItemStatus.TRASH

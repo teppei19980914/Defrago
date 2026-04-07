@@ -124,12 +124,29 @@ class DbGtdRepository:
         return [i for i in self._items if i.tag == tag]
 
     def get_tasks(self) -> list[GtdItem]:
-        """タスク化済みアイテムを返す.
+        """タスク化済みアイテムを返す（ゴミ箱内は除外）.
 
         Returns:
             タスク化済みアイテムのリスト。
         """
-        return [i for i in self._items if i.is_task()]
+        return [i for i in self._items if i.is_classified() and not i.is_in_trash()]
+
+    def get_active(self) -> list[GtdItem]:
+        """ゴミ箱以外の全アイテムを返す.
+
+        Returns:
+            ゴミ箱以外のアイテムのリスト。
+        """
+        return [i for i in self._items if not i.is_in_trash()]
+
+    def get_trash(self) -> list[GtdItem]:
+        """ゴミ箱内のアイテムを返す（新しい順）.
+
+        Returns:
+            ゴミ箱内のアイテムのリスト。
+        """
+        trash = [i for i in self._items if i.is_in_trash()]
+        return sorted(trash, key=lambda i: i.deleted_at, reverse=True)
 
     def flush_to_db(self) -> None:
         """インメモリ状態をDBに同期する（user_idスコープ内のみ）.
@@ -177,8 +194,6 @@ class DbGtdRepository:
             if row.time_estimate
             else None,
             energy=EnergyLevel(row.energy) if row.energy else None,
-            importance=row.importance,
-            urgency=row.urgency,
             project_purpose=row.project_purpose or "",
             project_outcome=row.project_outcome or "",
             project_support_location=row.project_support_location or "",
@@ -187,6 +202,7 @@ class DbGtdRepository:
             parent_project_id=row.parent_project_id,
             parent_project_title=row.parent_project_title or "",
             order=row.order,
+            deleted_at=row.deleted_at or "",
         )
 
     @staticmethod
@@ -205,8 +221,6 @@ class DbGtdRepository:
             locations_json=json.dumps([loc.value for loc in item.locations]),
             time_estimate=item.time_estimate.value if item.time_estimate else None,
             energy=item.energy.value if item.energy else None,
-            importance=item.importance,
-            urgency=item.urgency,
             project_purpose=item.project_purpose,
             project_outcome=item.project_outcome,
             project_support_location=item.project_support_location,
@@ -215,4 +229,5 @@ class DbGtdRepository:
             parent_project_id=item.parent_project_id,
             parent_project_title=item.parent_project_title,
             order=item.order,
+            deleted_at=item.deleted_at,
         )

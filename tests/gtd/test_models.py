@@ -1,7 +1,6 @@
 """GTDデータモデルのテスト."""
 
 from study_python.gtd.models import (
-    CalendarStatus,
     DelegationStatus,
     DoNowStatus,
     EnergyLevel,
@@ -22,10 +21,10 @@ class TestEnums:
         assert ItemStatus.INBOX.value == "inbox"
         assert ItemStatus.SOMEDAY.value == "someday"
         assert ItemStatus.REFERENCE.value == "reference"
+        assert ItemStatus.TRASH.value == "trash"
 
     def test_tag_values(self):
         assert Tag.DELEGATION.value == "delegation"
-        assert Tag.CALENDAR.value == "calendar"
         assert Tag.PROJECT.value == "project"
         assert Tag.DO_NOW.value == "do_now"
         assert Tag.TASK.value == "task"
@@ -34,10 +33,6 @@ class TestEnums:
         assert DelegationStatus.NOT_STARTED.value == "not_started"
         assert DelegationStatus.WAITING.value == "waiting"
         assert DelegationStatus.DONE.value == "done"
-
-    def test_calendar_status_values(self):
-        assert CalendarStatus.NOT_STARTED.value == "not_started"
-        assert CalendarStatus.REGISTERED.value == "registered"
 
     def test_do_now_status_values(self):
         assert DoNowStatus.NOT_STARTED.value == "not_started"
@@ -70,9 +65,6 @@ class TestGetStatusEnumForTag:
     def test_delegation_tag(self):
         assert get_status_enum_for_tag(Tag.DELEGATION) is DelegationStatus
 
-    def test_calendar_tag(self):
-        assert get_status_enum_for_tag(Tag.CALENDAR) is CalendarStatus
-
     def test_do_now_tag(self):
         assert get_status_enum_for_tag(Tag.DO_NOW) is DoNowStatus
 
@@ -95,28 +87,25 @@ class TestGtdItem:
         assert item.locations == []
         assert item.time_estimate is None
         assert item.energy is None
-        assert item.importance is None
-        assert item.urgency is None
         assert item.note == ""
-        assert item.id  # UUIDが生成されている
-        assert item.created_at  # 日時が設定されている
-        assert item.updated_at  # 日時が設定されている
+        assert item.deleted_at == ""
+        assert item.id
+        assert item.created_at
+        assert item.updated_at
 
     def test_touch_updates_timestamp(self):
         item = GtdItem(title="テスト")
         old_updated = item.updated_at
-        # 時刻が変わるようわずかに待つ代わりに直接比較
         item.touch()
-        # touch後はupdated_atが更新されている（同一か新しい）
         assert item.updated_at >= old_updated
 
-    def test_is_task_false_when_no_tag(self):
+    def test_is_classified_false_when_no_tag(self):
         item = GtdItem(title="テスト")
-        assert item.is_task() is False
+        assert item.is_classified() is False
 
-    def test_is_task_true_when_tag_set(self):
+    def test_is_classified_true_when_tag_set(self):
         item = GtdItem(title="テスト", tag=Tag.TASK)
-        assert item.is_task() is True
+        assert item.is_classified() is True
 
     def test_is_done_false_when_no_tag(self):
         item = GtdItem(title="テスト")
@@ -146,26 +135,6 @@ class TestGtdItem:
         item = GtdItem(title="テスト", tag=Tag.PROJECT)
         assert item.is_done() is False
 
-    def test_needs_organization_false_when_no_tag(self):
-        item = GtdItem(title="テスト")
-        assert item.needs_organization() is False
-
-    def test_needs_organization_false_for_project(self):
-        item = GtdItem(title="テスト", tag=Tag.PROJECT)
-        assert item.needs_organization() is False
-
-    def test_needs_organization_true_when_missing_scores(self):
-        item = GtdItem(title="テスト", tag=Tag.TASK)
-        assert item.needs_organization() is True
-
-    def test_needs_organization_true_when_partial_scores(self):
-        item = GtdItem(title="テスト", tag=Tag.TASK, importance=5)
-        assert item.needs_organization() is True
-
-    def test_needs_organization_false_when_scores_set(self):
-        item = GtdItem(title="テスト", tag=Tag.TASK, importance=5, urgency=3)
-        assert item.needs_organization() is False
-
     def test_needs_review_false_when_not_done(self):
         item = GtdItem(
             title="テスト", tag=Tag.TASK, status=TaskStatus.NOT_STARTED.value
@@ -180,21 +149,22 @@ class TestGtdItem:
         item = GtdItem(title="テスト", tag=Tag.PROJECT)
         assert item.needs_review() is True
 
-    def test_needs_review_true_for_calendar_registered(self):
+    def test_needs_review_false_for_trash_even_if_done(self):
         item = GtdItem(
             title="テスト",
-            tag=Tag.CALENDAR,
-            status=CalendarStatus.REGISTERED.value,
-        )
-        assert item.needs_review() is True
-
-    def test_needs_review_false_for_calendar_not_started(self):
-        item = GtdItem(
-            title="テスト",
-            tag=Tag.CALENDAR,
-            status=CalendarStatus.NOT_STARTED.value,
+            tag=Tag.TASK,
+            status=TaskStatus.DONE.value,
+            item_status=ItemStatus.TRASH,
         )
         assert item.needs_review() is False
+
+    def test_is_in_trash_true(self):
+        item = GtdItem(title="テスト", item_status=ItemStatus.TRASH)
+        assert item.is_in_trash() is True
+
+    def test_is_in_trash_false(self):
+        item = GtdItem(title="テスト")
+        assert item.is_in_trash() is False
 
     def test_default_parent_project_fields(self):
         item = GtdItem(title="テスト")
