@@ -1,8 +1,8 @@
 {
-  "current_version": "2.1.0",
+  "current_version": "3.0.0",
   "releases": [
     {
-      "version": "2.1.0",
+      "version": "3.0.0",
       "date": "2026-04-07",
       "title": "Defrago へリブランディング",
       "summary": "アプリ名を「MindFlow」から「Defrago」に変更しました。「脳をデフラグして実行する」という製品コンセプトを直接表現する名称です。",
