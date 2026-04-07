@@ -727,7 +727,7 @@ Phase 4: $50+/月 — 10,000ユーザー+
 
 | 課題 | 対策 | 着手タイミング |
 |------|------|-------------|
-| コールドスタート | 有料プラン or Keep-Alive ping | ユーザーからの苦情時 |
+| コールドスタート | **対策済み**: GitHub Actions の Keep-Alive ping を10分間隔で実行（[.github/workflows/keepalive.yml](../.github/workflows/keepalive.yml)）。さらに改善が必要な場合は有料プラン化を検討。 | 対応完了 |
 | 通知テーブル肥大化 | 既読90日超の自動削除バッチ | 1,000ユーザー超 |
 | レート制限の分散 | Redis導入 | 複数インスタンス化時 |
 | セッション共有 | Redis Session Store | 複数インスタンス化時 |

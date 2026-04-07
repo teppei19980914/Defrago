@@ -1,0 +1,37 @@
+name: Keep Alive
+
+# Render Free プランのスピンダウン（15分無アクセスで停止）を防ぐため、
+# 定期的にアプリへ HTTP リクエストを送信してウォーム状態を維持する。
+#
+# 注意:
+# - GitHub Actions の cron は負荷状況により最大15分程度遅延することがある
+#   ため、Render のスピンダウン閾値（15分）より十分短い間隔を指定する。
+# - Render サービスを再作成して URL が変わった場合は、
+#   下記 TARGET_URL を新URLに書き換えること。
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # 10分ごとに実行
+  workflow_dispatch:        # 手動実行も可能
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Defrago
+        env:
+          TARGET_URL: https://defrago.onrender.com/
+        run: |
+          echo "Pinging $TARGET_URL ..."
+          HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" \
+            --max-time 90 \
+            --retry 2 --retry-delay 5 \
+            "$TARGET_URL")
+          echo "HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+            echo "Keep-alive ping succeeded."
+          else
+            echo "::warning::Keep-alive ping returned non-success status: $HTTP_CODE"
+            exit 1
+          fi

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m pytest:*)"
+      "Bash(python -m pytest:*)",
+      "Bash(python -c \"import secrets; print\\(secrets.token_urlsafe\\(48\\)\\)\")",
+      "Bash(where python3:*)",
+      "Bash(where py:*)",
+      "Bash(where uv:*)"
     ]
   },
   "hooks": {
