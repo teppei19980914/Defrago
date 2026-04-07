@@ -45,8 +45,8 @@ class GtdItemRow(Base):
     updated_at: Mapped[str] = mapped_column(String(50), nullable=False)
     note: Mapped[str] = mapped_column(Text, default="")
 
-    # 収集フェーズ
-    item_status: Mapped[str] = mapped_column(String(20), default="inbox")
+    # アイテムの状態（inbox, someday, reference, trash）
+    item_status: Mapped[str] = mapped_column(String(20), default="inbox", index=True)
 
     # 明確化フェーズ
     tag: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -56,10 +56,6 @@ class GtdItemRow(Base):
     locations_json: Mapped[str] = mapped_column(Text, default="[]")
     time_estimate: Mapped[str | None] = mapped_column(String(20), nullable=True)
     energy: Mapped[str | None] = mapped_column(String(20), nullable=True)
-
-    # 整理フェーズ
-    importance: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    urgency: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # プロジェクト計画（ナチュラル・プランニング・モデル）
     project_purpose: Mapped[str] = mapped_column(Text, default="")
@@ -72,3 +68,6 @@ class GtdItemRow(Base):
     parent_project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     parent_project_title: Mapped[str] = mapped_column(String(500), default="")
     order: Mapped[int | None] = mapped_column("item_order", Integer, nullable=True)
+
+    # ゴミ箱移動日時（item_status=trash時のみ設定）
+    deleted_at: Mapped[str] = mapped_column(String(50), default="", index=True)

@@ -4,8 +4,13 @@
 
 ## プロジェクト概要
 
-- **目的**: （プロジェクトの目的を記載する）
+- **アプリ名**: Defrago
+- **テーマ**: 脳内メモリをデフラグ化し、最速でタスクに落とし込む
+- **コンセプト**: 高機能をシンプルに（エッセンシャル思考）
+- **GTDフェーズ**: 4フェーズ（収集 → 明確化 → 実行 → 見直し）
 - **言語**: Python 3.12+
+- **Webフレームワーク**: FastAPI + Jinja2 + HTMX
+- **DB**: PostgreSQL (Neon Free) / SQLite (ローカル開発)
 - **パッケージ管理**: uv（推奨）または pip
 
 ## ディレクトリ構造
@@ -13,14 +18,23 @@
 ```
 .
 ├── CLAUDE.md           # このファイル（ClaudeCode用指示）
+├── README.md           # プロジェクト概要・LP
 ├── pyproject.toml      # プロジェクト設定・依存関係
-├── src/                # ソースコード
-│   └── study_python/   # メインパッケージ
+├── render.yaml         # Renderデプロイ設定
+├── Dockerfile          # Dockerイメージ定義
+├── run_local.bat       # ローカル開発起動スクリプト
+├── src/study_python/   # メインパッケージ
+│   ├── gtd/            # Defragoコア（models, logic, web）
+│   └── logging_config.py
 ├── tests/              # テストコード
-├── docs/               # ドキュメント
-├── scripts/            # ユーティリティスクリプト
+├── docs/               # ドキュメント（OPERATIONS.md, requirements/, design/, specs/）
+├── scripts/            # 運用スクリプト（install-hooks.sh）
+├── .github/workflows/  # GitHub Actions CI
+├── .claude/            # Claude Code設定（hooks, skills, agents）
 └── logs/               # ログファイル（.gitignore対象）
 ```
+
+詳細な運用は [docs/OPERATIONS.md](docs/OPERATIONS.md) を参照。
 
 ## コーディング規約
 

@@ -1,8 +1,8 @@
-# MindFlow 運用マニュアル
+# Defrago 運用マニュアル
 
-更新日: 2026-04-06
+更新日: 2026-04-07
 
-本ドキュメントは、MindFlowアプリケーションの運用に必要なすべての手順・知識を網羅する。新規開発者が本ドキュメントのみで運用を開始できることを目標とする。
+本ドキュメントは、Defragoアプリケーションの運用に必要なすべての手順・知識を網羅する。新規開発者が本ドキュメントのみで運用を開始できることを目標とする。
 
 ---
 
@@ -34,7 +34,7 @@
 │  Render (Free Tier)         │
 │  Docker / Python 3.12       │
 │  FastAPI + Uvicorn          │
-│  mindflow-gtd.onrender.com  │
+│  defrago.onrender.com  │
 └──────────┬──────────────────┘
            ↓ PostgreSQL (SSL)
 ┌─────────────────────────────┐
@@ -58,8 +58,8 @@
 |---------|-----|
 | Render ダッシュボード | https://dashboard.render.com |
 | Neon ダッシュボード | https://console.neon.tech |
-| GitHub リポジトリ | https://github.com/teppei19980914/mindflow |
-| 本番アプリ | https://mindflow-gtd.onrender.com |
+| GitHub リポジトリ | https://github.com/teppei19980914/Defrago |
+| 本番アプリ | https://defrago.onrender.com |
 
 ---
 
@@ -115,7 +115,7 @@ run_local.bat をダブルクリック
 uv sync --extra dev
 
 # サーバー起動
-SECRET_KEY=dev DATABASE_URL=sqlite:///./dev.db uv run mindflow-web
+SECRET_KEY=dev DATABASE_URL=sqlite:///./dev.db uv run defrago-web
 
 # テスト実行
 uv run pytest tests/ -v
@@ -139,10 +139,10 @@ mindflow/
 │   ├── repository_protocol.py   # リポジトリProtocol
 │   ├── logic/                   # ビジネスロジック（Web非依存）
 │   │   ├── collection.py        #   収集フェーズ
-│   │   ├── clarification.py     #   明確化フェーズ
-│   │   ├── organization.py      #   整理フェーズ
+│   │   ├── clarification.py     #   明確化フェーズ（4分類ボタン）
 │   │   ├── execution.py         #   実行フェーズ
-│   │   └── review.py            #   見直しフェーズ
+│   │   ├── review.py            #   見直しフェーズ
+│   │   └── trash.py             #   ゴミ箱（30日保持・復元・自動削除）
 │   └── web/                     # FastAPI Webアプリケーション
 │       ├── app.py               #   アプリファクトリ + マイグレーション
 │       ├── config.py            #   環境変数設定
@@ -158,7 +158,7 @@ mindflow/
 │       └── static/              #   CSS, JS, labels.json, releases.json
 ├── tests/                       # テストコード
 ├── docs/                        # ドキュメント
-├── scripts/                     # ユーティリティスクリプト
+├── scripts/                     # 運用スクリプト（install-hooks.shのみ）
 ├── logs/                        # ログファイル（.gitignore対象）
 ├── .github/workflows/ci.yml     # GitHub Actions
 ├── .claude/                     # Claude Code設定（hooks, skills, agents）
@@ -183,7 +183,7 @@ git push origin main
 
 ### 手動デプロイ
 
-Renderダッシュボード → mindflow-gtd → **Manual Deploy** → **Deploy latest commit**
+Renderダッシュボード → defrago → **Manual Deploy** → **Deploy latest commit**
 
 ### Dockerビルド
 
@@ -204,9 +204,10 @@ CMD ["uv", "run", "uvicorn", "study_python.gtd.web.app:app", "--host", "0.0.0.0"
 
 - [ ] GitHub Actions CI が緑（全テストパス）
 - [ ] Renderのデプロイステータスが「Live」
-- [ ] ログインページが表示される（https://mindflow-gtd.onrender.com/login）
+- [ ] ログインページが表示される（https://defrago.onrender.com/login）
 - [ ] 新規ユーザー登録ができる
-- [ ] タスク登録→明確化→整理→実行の一連フローが動作する
+- [ ] タスク登録→明確化（4分類）→実行の一連フローが動作する
+- [ ] ゴミ箱への移動・復元・物理削除が動作する
 
 ---
 
@@ -306,7 +307,7 @@ docs: README.mdを更新
 | テーブル | 用途 | 主要カラム |
 |---------|------|----------|
 | `users` | ユーザー管理 | id, username, password_hash, created_at |
-| `gtd_items` | タスク・プロジェクト | id, user_id, title, tag, status, importance, urgency, ... |
+| `gtd_items` | タスク・プロジェクト | id, user_id, title, tag, status, deleted_at, project_*, ... |
 | `notifications` | 通知（リリース・実績） | id, user_id, notification_type, title, message, is_read |
 
 ### マイグレーション
@@ -390,11 +391,11 @@ uv run pytest -x
 
 | ディレクトリ | テスト対象 |
 |------------|----------|
-| `tests/gtd/logic/` | ビジネスロジック（収集・明確化・整理・実行・見直し） |
-| `tests/gtd/logic/test_tenant_isolation.py` | クロステナントデータ分離（6パターン） |
+| `tests/gtd/logic/` | ビジネスロジック（収集・明確化・実行・見直し・ゴミ箱） |
+| `tests/gtd/logic/test_tenant_isolation.py` | クロステナントデータ分離（ゴミ箱含む9パターン） |
+| `tests/gtd/logic/test_trash.py` | ゴミ箱機能（30日自動削除含む） |
 | `tests/gtd/web/` | Webルーター（認証・ダッシュボード・Inbox・実行） |
 | `tests/gtd/test_models.py` | データモデル |
-| `tests/test_calculator.py` | ユーティリティ |
 | `tests/test_logging_config.py` | ログ設定 |
 
 ### カバレッジ
@@ -430,7 +431,7 @@ logs/ ディレクトリのファイルを確認
 
 | 項目 | 確認方法 |
 |------|---------|
-| アプリ死活 | https://mindflow-gtd.onrender.com/login にアクセス |
+| アプリ死活 | https://defrago.onrender.com/login にアクセス |
 | DB接続 | ログイン後にダッシュボードが表示されるか |
 | CI状態 | GitHub Actions タブ |
 | DB容量 | Neonダッシュボード → Storage |
@@ -515,7 +516,7 @@ run_local.bat
 - [ ] 設定画面のバージョンが新バージョンになっている
 - [ ] ヘルプ → アップデート情報で新バージョンが表示される
 - [ ] 受信ボックスに新バージョンの通知が届いている
-- [ ] 既存機能が正常に動作する（収集→明確化→整理→実行→見直し）
+- [ ] 既存機能が正常に動作する（収集→明確化→実行→見直し）
 
 #### Step 5: コミット＆プッシュ
 
@@ -548,7 +549,7 @@ gh pr create --title "release: v1.1.0" --body "## リリース内容
 #### Step 8: デプロイ確認
 
 1. Renderダッシュボードでデプロイステータスが「Live」になるのを待つ
-2. https://mindflow-gtd.onrender.com/login にアクセスして動作確認
+2. https://defrago.onrender.com/login にアクセスして動作確認
 3. 新規ユーザーで登録し、受信ボックスに通知が届くことを確認
 
 #### Step 9: ブランチ削除

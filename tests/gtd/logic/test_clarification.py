@@ -4,7 +4,6 @@ import pytest
 
 from study_python.gtd.logic.clarification import ClarificationLogic
 from study_python.gtd.models import (
-    CalendarStatus,
     DelegationStatus,
     DoNowStatus,
     EnergyLevel,
@@ -23,9 +22,9 @@ def logic(repo: DbGtdRepository) -> ClarificationLogic:
     return ClarificationLogic(repo)
 
 
-def _create_someday_item(repo: DbGtdRepository, title: str = "テスト") -> GtdItem:
-    """いつかやるステータスのテストアイテムを作成する."""
-    item = GtdItem(title=title, item_status=ItemStatus.SOMEDAY)
+def _create_inbox_item(repo: DbGtdRepository, title: str = "テスト") -> GtdItem:
+    """Inbox状態の未分類テストアイテムを作成する."""
+    item = GtdItem(title=title, item_status=ItemStatus.INBOX)
     repo.add(item)
     return item
 
@@ -34,27 +33,29 @@ class TestClarificationLogic:
     """ClarificationLogicのテスト."""
 
     def test_get_pending_items(self, logic: ClarificationLogic, repo: DbGtdRepository):
-        _create_someday_item(repo, "未処理1")
-        _create_someday_item(repo, "未処理2")
-        item3 = _create_someday_item(repo, "処理済み")
-        item3.tag = Tag.TASK  # タグが設定済み
+        _create_inbox_item(repo, "未処理1")
+        _create_inbox_item(repo, "未処理2")
+        item3 = _create_inbox_item(repo, "処理済み")
+        item3.tag = Tag.TASK
 
         pending = logic.get_pending_items()
         assert len(pending) == 2
 
-    def test_get_pending_items_excludes_inbox(
+    def test_get_pending_items_excludes_classified(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        repo.add(GtdItem(title="Inbox", item_status=ItemStatus.INBOX))
-        _create_someday_item(repo, "Someday")
+        _create_inbox_item(repo, "未分類")
+        item = _create_inbox_item(repo, "分類済み")
+        item.tag = Tag.DO_NOW
 
         pending = logic.get_pending_items()
         assert len(pending) == 1
+        assert pending[0].title == "未分類"
 
     def test_classify_as_delegation(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        item = _create_someday_item(repo)
+        item = _create_inbox_item(repo)
         result = logic.classify_as_delegation(item.id)
         assert result is not None
         assert result.tag == Tag.DELEGATION
@@ -64,23 +65,10 @@ class TestClarificationLogic:
         result = logic.classify_as_delegation("nonexistent")
         assert result is None
 
-    def test_classify_as_calendar(
-        self, logic: ClarificationLogic, repo: DbGtdRepository
-    ):
-        item = _create_someday_item(repo)
-        result = logic.classify_as_calendar(item.id)
-        assert result is not None
-        assert result.tag == Tag.CALENDAR
-        assert result.status == CalendarStatus.NOT_STARTED.value
-
-    def test_classify_as_calendar_nonexistent(self, logic: ClarificationLogic):
-        result = logic.classify_as_calendar("nonexistent")
-        assert result is None
-
     def test_classify_as_project(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        item = _create_someday_item(repo)
+        item = _create_inbox_item(repo)
         result = logic.classify_as_project(item.id)
         assert result is not None
         assert result.tag == Tag.PROJECT
@@ -91,7 +79,7 @@ class TestClarificationLogic:
         assert result is None
 
     def test_classify_as_do_now(self, logic: ClarificationLogic, repo: DbGtdRepository):
-        item = _create_someday_item(repo)
+        item = _create_inbox_item(repo)
         result = logic.classify_as_do_now(item.id)
         assert result is not None
         assert result.tag == Tag.DO_NOW
@@ -104,66 +92,24 @@ class TestClarificationLogic:
     def test_classify_as_task_basic(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        item = _create_someday_item(repo)
-        result = logic.classify_as_task(
-            item.id,
-            locations=[Location.DESK],
-            time_estimate=TimeEstimate.WITHIN_30MIN,
-            energy=EnergyLevel.MEDIUM,
-        )
+        item = _create_inbox_item(repo)
+        result = logic.classify_as_task(item.id)
         assert result is not None
         assert result.tag == Tag.TASK
         assert result.status == TaskStatus.NOT_STARTED.value
-        assert result.locations == [Location.DESK]
-        assert result.time_estimate == TimeEstimate.WITHIN_30MIN
-        assert result.energy == EnergyLevel.MEDIUM
-
-    def test_classify_as_task_with_context(
-        self, logic: ClarificationLogic, repo: DbGtdRepository
-    ):
-        item = _create_someday_item(repo)
-        result = logic.classify_as_task(
-            item.id,
-            locations=[Location.DESK, Location.HOME],
-            time_estimate=TimeEstimate.WITHIN_30MIN,
-            energy=EnergyLevel.HIGH,
-        )
-        assert result is not None
-        assert result.locations == [Location.DESK, Location.HOME]
-        assert result.time_estimate == TimeEstimate.WITHIN_30MIN
-        assert result.energy == EnergyLevel.HIGH
+        assert result.locations == []
+        assert result.time_estimate is None
+        assert result.energy is None
 
     def test_classify_as_task_nonexistent(self, logic: ClarificationLogic):
-        result = logic.classify_as_task(
-            "nonexistent",
-            locations=[Location.DESK],
-            time_estimate=TimeEstimate.WITHIN_30MIN,
-            energy=EnergyLevel.MEDIUM,
-        )
+        result = logic.classify_as_task("nonexistent")
         assert result is None
-
-    def test_classify_as_task_empty_locations(
-        self, logic: ClarificationLogic, repo: DbGtdRepository
-    ):
-        item = _create_someday_item(repo)
-        with pytest.raises(ValueError, match="At least one location"):
-            logic.classify_as_task(
-                item.id,
-                locations=[],
-                time_estimate=TimeEstimate.WITHIN_30MIN,
-                energy=EnergyLevel.MEDIUM,
-            )
 
     def test_update_task_context(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        item = _create_someday_item(repo)
-        logic.classify_as_task(
-            item.id,
-            locations=[Location.DESK],
-            time_estimate=TimeEstimate.WITHIN_30MIN,
-            energy=EnergyLevel.MEDIUM,
-        )
+        item = _create_inbox_item(repo)
+        logic.classify_as_task(item.id)
 
         result = logic.update_task_context(
             item.id,
@@ -179,19 +125,16 @@ class TestClarificationLogic:
     def test_update_task_context_partial(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        item = _create_someday_item(repo)
-        logic.classify_as_task(
-            item.id,
-            locations=[Location.DESK],
-            time_estimate=TimeEstimate.WITHIN_30MIN,
-            energy=EnergyLevel.MEDIUM,
+        item = _create_inbox_item(repo)
+        logic.classify_as_task(item.id)
+        logic.update_task_context(
+            item.id, locations=[Location.DESK], energy=EnergyLevel.MEDIUM
         )
 
         result = logic.update_task_context(item.id, energy=EnergyLevel.HIGH)
         assert result is not None
-        assert result.locations == [Location.DESK]  # 変更なし
-        assert result.time_estimate == TimeEstimate.WITHIN_30MIN  # 変更なし
-        assert result.energy == EnergyLevel.HIGH  # 更新された
+        assert result.locations == [Location.DESK]
+        assert result.energy == EnergyLevel.HIGH
 
     def test_update_task_context_nonexistent(self, logic: ClarificationLogic):
         result = logic.update_task_context("nonexistent")
@@ -200,7 +143,7 @@ class TestClarificationLogic:
     def test_update_task_context_non_task_tag(
         self, logic: ClarificationLogic, repo: DbGtdRepository
     ):
-        item = _create_someday_item(repo)
+        item = _create_inbox_item(repo)
         logic.classify_as_delegation(item.id)
 
         result = logic.update_task_context(item.id, locations=[Location.DESK])

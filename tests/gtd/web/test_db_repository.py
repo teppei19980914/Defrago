@@ -76,18 +76,17 @@ class TestDbGtdRepository:
         repo = DbGtdRepository(test_session)
         item = GtdItem(
             title="完全",
-            item_status=ItemStatus.SOMEDAY,
+            item_status=ItemStatus.INBOX,
             tag=Tag.TASK,
             status=TaskStatus.IN_PROGRESS.value,
             locations=[Location.DESK, Location.HOME],
             time_estimate=TimeEstimate.WITHIN_30MIN,
             energy=EnergyLevel.HIGH,
-            importance=8,
-            urgency=3,
             parent_project_id="proj-abc",
             parent_project_title="親PJ",
             order=1,
             note="メモ",
+            deleted_at="",
         )
         repo.add(item)
         repo.flush_to_db()
@@ -100,8 +99,6 @@ class TestDbGtdRepository:
         assert loaded.locations == [Location.DESK, Location.HOME]
         assert loaded.time_estimate == TimeEstimate.WITHIN_30MIN
         assert loaded.energy == EnergyLevel.HIGH
-        assert loaded.importance == 8
-        assert loaded.urgency == 3
         assert loaded.parent_project_id == "proj-abc"
         assert loaded.parent_project_title == "親PJ"
         assert loaded.order == 1

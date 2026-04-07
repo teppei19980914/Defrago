@@ -21,9 +21,6 @@
         </span>
         {% endif %}
     </div>
-    {% if item.importance is not none and item.urgency is not none %}
-    <div class="card-scores">{{ labels.organization.importance_label }} {{ item.importance }}  {{ labels.organization.urgency_label }} {{ item.urgency }}</div>
-    {% endif %}
     {% if item.note %}
     <div class="card-note">{{ item.note }}</div>
     {% endif %}
@@ -63,10 +60,12 @@
     <p class="empty-msg">{{ labels.review.items_empty }}</p>
     {% endif %}
 {% endif %}
-{% if items and active_page == "/inbox" %}
+{% if active_page == "/inbox" and unclassified_count and unclassified_count > 0 %}
 <div class="flow-action">
     <form action="/inbox/process_all" method="post">
-        <button type="submit" class="btn-primary btn-full">{{ labels.inbox.process_all }}</button>
+        <button type="submit" class="btn-primary btn-full">
+            {{ unclassified_count }}{{ labels.inbox.unclassified_count_suffix }} {{ labels.inbox.process_all }}
+        </button>
     </form>
 </div>
 {% endif %}

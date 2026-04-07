@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -21,18 +22,24 @@ from study_python.gtd.web.routers import (
     execution,
     iconbar,
     inbox,
-    organization,
     review,
     settings_web,
+    trash,
 )
 from study_python.logging_config import setup_logging
 
 
 logger = logging.getLogger(__name__)
 
+TRASH_RETENTION_DAYS = 30
 
-def _migrate_add_project_planning_columns(engine: object) -> None:
-    """プロジェクト計画カラムを既存テーブルに追加するマイグレーション."""
+
+def _migrate_schema(engine: object) -> None:
+    """既存DBスキーマを最新化する.
+
+    PostgreSQLとSQLite両対応の互換性ある構文を使用する。
+    既存カラムの追加と、廃止カラムのデータマイグレーションを行う。
+    """
     from sqlalchemy import inspect, text
 
     insp = inspect(engine)
@@ -46,6 +53,7 @@ def _migrate_add_project_planning_columns(engine: object) -> None:
         "is_next_action": "BOOLEAN DEFAULT FALSE",
         "deadline": "VARCHAR(50) DEFAULT ''",
         "user_id": "VARCHAR(36) NOT NULL DEFAULT ''",
+        "deleted_at": "VARCHAR(50) DEFAULT ''",
     }
     with engine.begin() as conn:
         for col_name, col_def in new_columns.items():
@@ -55,6 +63,37 @@ def _migrate_add_project_planning_columns(engine: object) -> None:
                 )
                 logger.info(f"Migration: added column '{col_name}' to gtd_items")
 
+        # 廃止されたCALENDARタグを持つアイテムをタスクに変換
+        conn.execute(
+            text(
+                "UPDATE gtd_items SET tag = 'task', status = 'not_started' "
+                "WHERE tag = 'calendar'"
+            )
+        )
+
+
+def _cleanup_expired_trash(engine: object) -> None:
+    """30日経過したゴミ箱アイテムを物理削除する.
+
+    全ユーザーを横断するバッチ処理のため、user_idでフィルタしない。
+    DbGtdRepositoryを経由せず、直接エンジン経由で実行する。
+    """
+    from sqlalchemy import text
+
+    cutoff = (datetime.now(UTC) - timedelta(days=TRASH_RETENTION_DAYS)).isoformat()
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                "DELETE FROM gtd_items "
+                "WHERE item_status = 'trash' "
+                "AND deleted_at != '' "
+                "AND deleted_at < :cutoff"
+            ),
+            {"cutoff": cutoff},
+        )
+        if result.rowcount > 0:
+            logger.info(f"Cleanup: deleted {result.rowcount} expired trash items")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -62,8 +101,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging(level="INFO", log_to_file=True, log_to_console=True)
     engine = get_engine()
     Base.metadata.create_all(engine)
-    _migrate_add_project_planning_columns(engine)
-    logger.info("MindFlow Web started")
+    _migrate_schema(engine)
+    _cleanup_expired_trash(engine)
+    logger.info("Defrago Web started")
     yield
 
 
@@ -75,7 +115,7 @@ def create_app() -> FastAPI:
     """
     settings = get_settings()
 
-    app = FastAPI(title="MindFlow GTD", lifespan=lifespan)
+    app = FastAPI(title="Defrago GTD", lifespan=lifespan)
 
     # Session middleware with security flags
     app.add_middleware(
@@ -136,9 +176,9 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router)
     app.include_router(inbox.router)
     app.include_router(clarification.router)
-    app.include_router(organization.router)
     app.include_router(execution.router)
     app.include_router(review.router)
+    app.include_router(trash.router)
     app.include_router(settings_web.router)
     app.include_router(iconbar.router)
 

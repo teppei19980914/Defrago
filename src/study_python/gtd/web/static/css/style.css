@@ -264,7 +264,6 @@ a { color: var(--accent-blue); text-decoration: none; }
     font-size: 11px; font-weight: bold; color: var(--bg-primary);
 }
 .tag-delegation { background: var(--accent-mauve); }
-.tag-calendar { background: var(--accent-teal); }
 .tag-project { background: var(--accent-yellow); }
 .tag-do_now { background: var(--accent-red); }
 .tag-task { background: var(--accent-blue); }
@@ -554,9 +553,83 @@ a { color: var(--accent-blue); text-decoration: none; }
 .help-actions { display: flex; justify-content: center; margin: 16px 0; }
 .help-update-btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 
+/* Quick classify (Inbox) */
+.quick-classify-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+}
+.quick-classify-label { font-size: 12px; color: var(--text-secondary); margin-right: 4px; }
+.quick-tag-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    color: var(--text-primary); border-radius: 8px; cursor: pointer;
+    font-size: 13px; transition: all 0.15s;
+}
+.quick-tag-btn:hover {
+    background: var(--bg-surface); transform: translateY(-1px);
+}
+.quick-tag-icon { font-size: 16px; }
+.quick-tag-delegation:hover { border-color: var(--accent-mauve); }
+.quick-tag-project:hover { border-color: var(--accent-blue); }
+.quick-tag-do_now:hover { border-color: var(--accent-yellow); }
+.quick-tag-task:hover { border-color: var(--accent-green); }
+
+/* Clarification (4-button mode) */
+.clarification-card {
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 12px; padding: 32px; margin-top: 16px;
+}
+.clarification-title {
+    font-size: 22px; font-weight: bold; text-align: center;
+    margin-bottom: 24px; padding: 16px;
+    background: var(--bg-primary); border-radius: 8px;
+    word-break: break-word;
+}
+.clarification-buttons {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;
+}
+.classify-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 20px 16px; background: var(--bg-surface); border: 2px solid var(--border);
+    color: var(--text-primary); border-radius: 10px; cursor: pointer;
+    transition: all 0.15s; text-align: center;
+}
+.classify-btn:hover { transform: translateY(-2px); }
+.classify-icon { font-size: 28px; }
+.classify-label { font-size: 15px; font-weight: bold; }
+.classify-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.classify-delegation:hover { border-color: var(--accent-mauve); background: rgba(203,166,247,0.1); }
+.classify-project:hover { border-color: var(--accent-blue); background: rgba(137,180,250,0.1); }
+.classify-do-now:hover { border-color: var(--accent-yellow); background: rgba(249,226,175,0.1); }
+.classify-task:hover { border-color: var(--accent-green); background: rgba(166,227,161,0.1); }
+.clarification-secondary {
+    display: flex; justify-content: center; gap: 12px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+/* Trash */
+.trash-list { display: flex; flex-direction: column; gap: 12px; }
+.trash-card {
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+}
+.trash-card-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.trash-card-title { font-weight: bold; flex: 1; word-break: break-word; }
+.trash-card-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+.trash-deleted-at { display: inline-flex; align-items: center; gap: 4px; }
+.trash-card-actions { display: flex; gap: 8px; }
+
+/* Iconbar link button */
+.icon-btn-link { text-decoration: none; }
+.icon-btn-link.active { color: var(--accent-blue); }
+
 /* Responsive */
 @media (max-width: 768px) {
     .page-container { padding: 16px; padding-top: 8px; }
-    .matrix-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .clarification-buttons { grid-template-columns: 1fr; }
+    .quick-classify-row { gap: 6px; }
+    .quick-tag-btn { padding: 6px 10px; font-size: 12px; }
 }

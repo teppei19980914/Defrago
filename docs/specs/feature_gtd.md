@@ -1,27 +1,27 @@
-# MindFlow 機能仕様書 (FastAPI Web版)
+# Defrago 機能仕様書 (FastAPI Web版)
 
-更新日: 2026-04-06
+更新日: 2026-04-07 (v2.0.0)
 
 ---
 
 ## 1. 概要
 
-本書は MindFlow FastAPI Webアプリケーションの全機能を MECE（漏れなくダブりなく）に仕様化したものである。
-GTD の 5 フェーズ（収集・明確化・整理・実行・見直し）と横断的機能（ダッシュボード・認証・通知・アイコンバー・設定）を網羅する。
+本書は Defrago FastAPI Webアプリケーションの全機能を MECE（漏れなくダブりなく）に仕様化したものである。
+GTD の 4 フェーズ（収集・明確化・実行・見直し）と横断的機能（ダッシュボード・認証・通知・アイコンバー・設定・ゴミ箱）を網羅する。
 
 ### 1.1 機能分類体系
 
 ```mermaid
 graph TB
-    MF[MindFlow] --> PHASE[GTDフェーズ機能]
+    MF[Defrago] --> PHASE[GTDフェーズ機能]
     MF --> CROSS[横断的機能]
 
     PHASE --> F1[F1: 収集]
     PHASE --> F2[F2: 明確化]
-    PHASE --> F3[F3: 整理]
     PHASE --> F4[F4: 実行]
     PHASE --> F5[F5: 見直し]
 
+    CROSS --> TRASH[F-TRASH: ゴミ箱]
     CROSS --> F6[F6: ダッシュボード]
     CROSS --> F7[F7: 認証]
     CROSS --> F8[F8: アイコンバー]
@@ -29,6 +29,7 @@ graph TB
     CROSS --> F10[F10: 設定]
     CROSS --> F11[F11: バージョン管理]
     CROSS --> F12[F12: テキスト管理]
+    CROSS --> F13[F13: プロジェクト計画]
 ```
 
 ---
@@ -38,6 +39,7 @@ graph TB
 ### 2.1 機能概要
 
 ユーザーの頭の中にあるタスク・アイデアをすべて Inbox に登録する。
+4 つのクイック分類ボタンで直接分類することも可能。
 
 ### 2.2 URL パス
 
@@ -48,11 +50,13 @@ graph TB
 | `/inbox/{item_id}/delete` | POST | アイテム削除（HTMX） |
 | `/inbox/{item_id}/order_up` | POST | 順序を上に移動（HTMX） |
 | `/inbox/{item_id}/order_down` | POST | 順序を下に移動（HTMX） |
+| `/inbox/{item_id}/classify` | POST | クイック分類（HTMX） |
+| `/inbox/add_unclassified` | POST | 未分類を追加（HTMX） |
 | `/inbox/process_all` | POST | 全アイテムを明確化フェーズへ送信 |
 
 ### 2.3 テンプレートファイル
 
-- `inbox.html` - メインページ
+- `inbox.html` - メインページ（4 クイック分類ボタン + アイテムリスト）
 - `partials/item_list.html` - アイテムリスト（再利用パーシャル）
 
 ### 2.4 ルーターファイル
@@ -118,15 +122,60 @@ graph TB
 - アイテムリストが並び替わる
 - HTMX で `#item-list` を更新
 
-#### F1-4: 全アイテム処理
+#### F1-4: クイック分類ボタン
+
+**表示位置**: Inbox ページのアイテムリスト上部に 4 つのボタン
+
+**4 つの分類ボタン**:
+
+| ボタン | タグ | 説明 |
+|--------|------|------|
+| 依頼 | DELEGATION | 誰かに委譲する |
+| プロジェクト | PROJECT | 2ステップ以上のアクション |
+| 今すぐ | DO_NOW | 数分で完了 |
+| タスク | TASK | スケジュール予約が必要 |
+
+**URL**: POST `/inbox/{item_id}/classify`
+
+**フォーム入力**:
+- `item_id` (str): 分類対象のアイテム ID
+- `tag` (str): 分類タグ（delegation/project/do_now/task）
+
+**実行処理**:
+1. アイテムに指定タグを設定
+2. item_status を SOMEDAY に変更
+3. 必要に応じてコンテキスト（locations, time_estimate, energy）を自動設定
+
+**結果**:
+- HTMX で `#item-list` を更新
+- 分類済みアイテムは分類対象から除外
+
+#### F1-5: 未分類追加ボタン
+
+**URL**: POST `/inbox/add_unclassified`
+
+**説明**: ユーザーが後で明確化フェーズで分類することを選択
+
+**フォーム入力**:
+- `title` (str): アイテムのタイトル
+
+**実行処理**:
+1. item_status=SOMEDAY でアイテムを生成（tag=None）
+2. リポジトリに追加、DB 保存
+
+**結果**:
+- アイテムリストに追加
+- HTMX で `#item-list` を更新
+
+#### F1-6: 全アイテム処理
 
 **ユーザー操作**: 「全て処理する」ボタンをクリック
 
 **URL**: POST `/inbox/process_all`
 
 **実行処理**:
-1. Inbox 内の全アイテムを SOMEDAY ステータスに変更
-2. 明確化フェーズへ送信
+1. Inbox 内の全アイテムを SOMEDAY ステータスに変更（分類済みはスキップ）
+2. 未分類アイテムを明確化フェーズへ送信
 
 **結果**:
 - `/clarification` にリダイレクト（HTTP 303）
@@ -137,20 +186,22 @@ graph TB
 
 ### 3.1 機能概要
 
-SOMEDAY アイテムを GTD の決定木に従って分類する。
-4 段階の Yes/No 質問に回答することで、アイテムのタグを決定する。
+SOMEDAY かつ tag=None のアイテムを 4 つのボタンベースの分類システムで分類する。
+従来の Yes/No 質問フローは廃止され、直接ボタンクリックで分類。
 
 ### 3.2 URL パス
 
 | URL | メソッド | 説明 |
 |-----|---------|------|
 | `/clarification` | GET | 明確化ページ表示 |
-| `/clarification/answer` | POST | ウィザード回答処理（HTMX） |
+| `/clarification/classify` | POST | ボタン分類（HTMX） |
+| `/clarification/skip` | POST | このアイテムをスキップ（HTMX） |
+| `/clarification/delete` | POST | このアイテムを削除（HTMX） |
 
 ### 3.3 テンプレートファイル
 
-- `clarification.html` - メインページ（ウィザード表示）
-- `partials/clarification_step.html` - ウィザード ステップ（再利用パーシャル）
+- `clarification.html` - メインページ（4 分類ボタン + スキップ/削除）
+- `partials/clarification_item.html` - 分類対象アイテム表示（再利用パーシャル）
 
 ### 3.4 ルーターファイル
 
@@ -162,192 +213,108 @@ SOMEDAY アイテムを GTD の決定木に従って分類する。
 
 ### 3.6 機能詳細
 
-#### 質問フロー
+#### 分類ボタンレイアウト
 
 ```
-Step 0: "自身が実施しなくてはいけないですか？"
-  ├─ No → DELEGATION タグ設定 → 次へ
-  └─ Yes → Step 1
-
-Step 1: "日時が明確ですか？"
-  ├─ Yes → CALENDAR タグ設定 → 次へ
-  └─ No → Step 2
-
-Step 2: "2ステップ以上のアクションが必要ですか？"
-  ├─ Yes → PROJECT タグ設定 → 次へ
-  └─ No → Step 3
-
-Step 3: "数分で実施できますか？"
-  ├─ Yes → DO_NOW タグ設定 → 次へ
-  └─ No → コンテキスト フォーム表示
-    ├─ 実施場所 (複数選択)
-    ├─ 所要時間 (単一選択)
-    ├─ 必要なエネルギー (単一選択)
-    └─ 登録 → TASK タグ設定 → 次へ
+┌─────────────────────────────────────┐
+│  アイテム: "[タイトル]"              │
+│                                      │
+│  [ 依頼 ]  [ プロジェクト ]          │
+│  [ 今すぐ ]  [ タスク ]              │
+│                                      │
+│  [ スキップ ] [ 削除 ]               │
+└─────────────────────────────────────┘
 ```
 
-#### F2-1: 回答処理
+#### F2-1: 分類ボタン処理
 
-**URL**: POST `/clarification/answer`
+**URL**: POST `/clarification/classify`
 
 **フォーム入力**:
-- `item_id` (str): 処理中のアイテム ID
-- `step` (int): 現在のステップ（0-3）
-- `choice` (str): 回答（"yes" or "no"）
-- `locations` (list[str]): 実施場所（タグ設定時）
-- `time_estimate` (str): 所要時間（タグ設定時）
-- `energy` (str): 必要なエネルギー（タグ設定時）
+- `item_id` (str): 分類対象のアイテム ID
+- `tag` (str): 選択されたタグ（delegation/project/do_now/task）
 
 **実行処理**:
-1. 選択肢に応じてロジックを実行
-2. タグ・ステータスを設定
-3. 次のステップまたは次のアイテムへ
+1. タグを設定
+2. タグに応じてコンテキスト情報を設定:
+   - DELEGATION: locations=[], time_estimate=None, energy=None
+   - PROJECT: locations=[], time_estimate=None, energy=None
+   - DO_NOW: locations=["desk"], time_estimate="within_10min", energy="low"
+   - TASK: locations=["desk"], time_estimate="within_30min", energy="medium"
+3. item_status を SOMEDAY のままに保持
+4. 次の未分類アイテムを表示
 
 **結果**:
-- `partials/clarification_step.html` を HTMX で返す
-- ステップが進む、または次のアイテムに移動
+- `partials/clarification_item.html` を HTMX で返す
+- 次のアイテムに自動遷移
+- すべて完了時は `/execution` にリダイレクト
 
-#### F2-2: コンテキスト入力フォーム
+#### F2-2: スキップ機能
 
-**表示条件**: Step 3 で "No" が選ばれた場合
+**URL**: POST `/clarification/skip`
 
-**入力フィールド**:
+**フォーム入力**:
+- `item_id` (str): スキップ対象のアイテム ID
 
-| 項目 | 入力形式 | 選択肢 | デフォルト | 必須 |
-|------|---------|-------|----------|------|
-| 実施場所 * | チェックボックス（複数選択可） | desk, home, mobile | desk | 1 つ以上 |
-| 所要時間 * | プルダウン | within_10min, within_30min, within_1hour | within_30min | はい |
-| 必要なエネルギー * | ラジオボタン | low, medium, high | medium | はい |
+**実行処理**:
+1. アイテムを tag=None のまま SOMEDAY に保持
+2. 次の未分類アイテムを表示
 
-**バリデーション**:
-- 実施場所が未選択 → エラーメッセージ表示
-- エネルギーレベルが未選択 → エラーメッセージ表示
+**結果**:
+- HTMX で `#clarification_item` を更新
+- 次のアイテムへ遷移
+
+#### F2-3: 削除機能
+
+**URL**: POST `/clarification/delete`
+
+**フォーム入力**:
+- `item_id` (str): 削除対象のアイテム ID
+
+**実行処理**:
+1. アイテムを物理削除
+2. 次の未分類アイテムを表示
+
+**結果**:
+- HTMX で `#clarification_item` を更新
+- 次のアイテムへ遷移
 
 ---
 
-## 4. F3: 整理フェーズ (Organization)
+## 4. F4: 実行フェーズ (Execution)
 
 ### 4.1 機能概要
 
-タグ付け済み（PROJECT 以外）のアイテムに対して重要度と緊急度を設定し、
-Eisenhower マトリクスで視覚化する。
+タグ付け済みの未完了タスクを一覧表示し、ステータスを変更する。
 
 ### 4.2 URL パス
 
 | URL | メソッド | 説明 |
 |-----|---------|------|
-| `/organization` | GET | 整理ページ表示 |
-| `/organization/set_scores` | POST | スコア設定（HTMX） |
+| `/execution` | GET | 実行ページ表示 |
+| `/execution/{item_id}/set_status` | POST | ステータス変更（HTMX） |
 
 ### 4.3 テンプレートファイル
 
-- `organization.html` - メインページ（左右 2 パネル）
-- `partials/organization_form.html` - スコア設定フォーム（再利用パーシャル）
+- `execution.html` - メインページ（タスク一覧）
+- `partials/task_list.html` - タスクリスト（再利用パーシャル）
 
 ### 4.4 ルーターファイル
 
-- `src/study_python/gtd/web/routers/organization.py`
+- `src/study_python/gtd/web/routers/execution.py`
 
 ### 4.5 ロジックファイル
 
-- `src/study_python/gtd/logic/organization.py` (OrganizationLogic)
-
-### 4.6 UI レイアウト
-
-**左パネル**（最大 500px）:
-- アイテム表示（タイトル + タグバッジ）
-- 重要度スライダー（1-10、初期値 5）
-- 緊急度スライダー（1-10、初期値 5）
-- 「設定して次へ」ボタン
-
-**右パネル**（残り全幅）:
-- Eisenhower マトリクス（散布図）
-- Q1-Q4 象限の表示
-- 全アイテムの位置をプロット
-
-### 4.7 機能詳細
-
-#### F3-1: スコア設定
-
-**URL**: POST `/organization/set_scores`
-
-**フォーム入力**:
-- `item_id` (str): アイテム ID
-- `importance` (int): 重要度（1-10、デフォルト 5）
-- `urgency` (int): 緊急度（1-10、デフォルト 5）
-
-**実行処理**:
-1. OrganizationLogic.set_importance_urgency() で スコアを設定
-2. アイテム importance, urgency を更新
-
-**結果**:
-- `partials/organization_form.html` を HTMX で返す
-- マトリクスがリアルタイム更新
-- 次のアイテムに進む
-
-#### F3-2: Eisenhower マトリクス表示
-
-**象限定義**:
-
-| 象限 | 重要度 | 緊急度 | 説明 |
-|------|-------|-------|------|
-| Q1 | 6-10 | 6-10 | 重要・緊急（赤） |
-| Q2 | 6-10 | 1-5 | 重要・非緊急（青） |
-| Q3 | 1-5 | 6-10 | 非重要・緊急（オレンジ） |
-| Q4 | 1-5 | 1-5 | 非重要・非緊急（灰） |
-
-**表示要素**:
-- ドット（色分け、半径 6px）
-- ラベル（最大 12 文字、超過時 "…" 省略）
-- ツールチップ（ホバー時にタイトル + スコア表示）
-- 象限背景色（透明度 25-30%）
-
----
-
-## 5. F4: 実行フェーズ (Execution)
-
-### 5.1 機能概要
-
-タグ付け済みの未完了タスクを一覧表示し、ステータスを変更する。
-
-### 5.2 URL パス
-
-| URL | メソッド | 説明 |
-|-----|---------|------|
-| `/execution` | GET | 実行ページ表示 |
-| `/execution?tag={tag}` | GET | タグフィルタ表示 |
-| `/execution/{item_id}/set_status` | POST | ステータス変更（HTMX） |
-
-### 5.3 テンプレートファイル
-
-- `execution.html` - メインページ（タスク一覧 + フィルタ）
-- `partials/task_list.html` - タスクリスト（再利用パーシャル）
-
-### 5.4 ルーターファイル
-
-- `src/study_python/gtd/web/routers/execution.py`
-
-### 5.5 ロジックファイル
-
 - `src/study_python/gtd/logic/execution.py` (ExecutionLogic)
 
-### 5.6 機能詳細
+### 4.6 機能詳細
 
-#### F4-1: タグフィルタ
+#### F4-1: タスクリスト表示
 
-**フィルタ選択肢**:
-
-| フィルタ値 | 表示名 | 条件 |
-|----------|-------|------|
-| all | すべて | tag != None かつ tag != PROJECT かつ未完了 |
-| delegation | 依頼 | tag == DELEGATION かつ未完了 |
-| calendar | カレンダー | tag == CALENDAR かつ未完了 |
-| do_now | 即実行 | tag == DO_NOW かつ未完了 |
-| task | タスク | tag == TASK かつ未完了 |
-
-**UI**: ドロップダウンメニュー（query parameter で `tag` を指定）
-
-#### F4-2: タスクリスト表示
+**フィルタ対象**:
+- tag != None かつ tag != PROJECT
+- item_status != REFERENCE
+- 未完了アイテム
 
 **ソート順序**:
 1. 重要度（降順、未設定は 0）
@@ -363,14 +330,14 @@ Eisenhower マトリクスで視覚化する。
 
 | 要素 | 幅 | 説明 |
 |------|---|------|
-| タグバッジ | 固定 80px | タグ色背景+表示名 |
+| タグバッジ | 固定 80px | タグ色背示名 |
 | タイトル | 可変（stretch） | アイテムタイトル |
 | スコア | 可変 | "重N 緊N"（設定済み時のみ） |
 | ステータス | 可変 | QComboBox（Project 以外） |
 
-#### F4-3: ステータス変更
+#### F4-2: ステータス変更
 
-**URL**: POST `/execution/{item_id}/set_status`
+**URL**: POST `/execution/{item_id}/status`
 
 **フォーム入力**:
 - `status` (str): 新しいステータス
@@ -379,14 +346,14 @@ Eisenhower マトリクスで視覚化する。
 
 | タグ | 選択可能ステータス |
 |------|-----------------|
-| DELEGATION | not_started, waiting, registered |
-| CALENDAR | not_started, registered |
-| DO_NOW | not_started, registered |
-| TASK | not_started, in_progress, registered |
+| DELEGATION | not_started, waiting, done |
+| DO_NOW | not_started, done |
+| TASK | not_started, in_progress, done |
+
+注: v2.0.0 で CALENDAR タグは廃止され、TASK に統合されました。
 
 **実行処理**:
-1. ExecutionLogic.set_status() でステータスを更新
-2. CALENDAR の "registered" → 自動削除（オプション）
+1. ExecutionLogic.update_status() でステータスを更新
 
 **結果**:
 - `partials/task_list.html` を HTMX で返す
@@ -394,36 +361,36 @@ Eisenhower マトリクスで視覚化する。
 
 ---
 
-## 6. F5: 見直しフェーズ (Review)
+## 5. F5: 見直しフェーズ (Review)
 
-### 6.1 機能概要
+### 5.1 機能概要
 
 完了したタスクとプロジェクトを見直し、
-削除・Inbox 戻し・プロジェクト細分化の処理を行う。
+削除（物理削除）・Inbox 戻し・プロジェクト細分化の処理を行う。
 
-### 6.2 URL パス
+### 5.2 URL パス
 
 | URL | メソッド | 説明 |
 |-----|---------|------|
 | `/review` | GET | 見直しページ表示 |
-| `/review/{item_id}/delete` | POST | アイテム削除（HTMX） |
+| `/review/{item_id}/delete` | POST | アイテム物理削除（HTMX） |
 | `/review/{item_id}/to_inbox` | POST | Inbox に戻す（HTMX） |
 | `/review/{item_id}/decompose` | POST | プロジェクト分解（HTMX） |
 
-### 6.3 テンプレートファイル
+### 5.3 テンプレートファイル
 
 - `review.html` - メインページ
 - `partials/item_list.html` - アイテムリスト（再利用パーシャル）
 
-### 6.4 ルーターファイル
+### 5.4 ルーターファイル
 
 - `src/study_python/gtd/web/routers/review.py`
 
-### 6.5 ロジックファイル
+### 5.5 ロジックファイル
 
 - `src/study_python/gtd/logic/review.py` (ReviewLogic)
 
-### 6.6 機能詳細
+### 5.6 機能詳細
 
 #### F5-1: 完了タスク Inbox 戻し
 
@@ -437,21 +404,19 @@ Eisenhower マトリクスで視覚化する。
    - locations = []
    - time_estimate = None
    - energy = None
-   - importance = None
-   - urgency = None
-   - project_* = None
+   - parent_project_id / parent_project_title / order は保持（プロジェクト紐付けを維持）
 
 **結果**:
 - アイテムが Inbox に戻る
 - 見直し対象から削除
 - HTMX で `#item-list` を更新
 
-#### F5-2: アイテム削除
+#### F5-2: アイテム物理削除
 
 **URL**: POST `/review/{item_id}/delete`
 
 **実行処理**:
-1. アイテムを物理削除
+1. アイテムを物理削除（ゴミ箱に移動しない）
 
 **結果**:
 - 見直し対象から削除
@@ -478,22 +443,87 @@ Eisenhower マトリクスで視覚化する。
 - サブタスクが Inbox に登録される
 - HTMX で `#item-list` を更新
 
-#### F5-4: プロジェクト計画（Natural Planning Model）
+---
 
-**概要**: 完了したプロジェクトをさらに詳細に計画
+## 6. F-TRASH: ゴミ箱 (Trash)
 
-**6 ステップウィザード**:
+### 6.1 機能概要
 
-| ステップ | タイトル | 入力 |
-|---------|---------|------|
-| 1 | Purpose（目的） | テキストエリア |
-| 2 | Outcome（成果） | テキストエリア |
-| 3 | Brainstorm（ブレーンストーム） | テキストエリア（アイデア羅列） |
-| 4 | Organize（整理） | サブタスク入力（改行区切り） |
-| 5 | Support Location（支援拠点） | テキストエリア（リソース・場所） |
-| 6 | Next Actions（次のアクション） | サブタスク入力（改行区切り） |
+削除されたアイテムを一時的に保管し、30 日後に自動削除。
+復元または永久削除の操作が可能。
 
-**テンプレート**: `partials/plan_step.html`
+### 6.2 URL パス
+
+| URL | メソッド | 説明 |
+|-----|---------|------|
+| `/trash` | GET | ゴミ箱ページ表示 |
+| `/trash/{item_id}/restore` | POST | アイテム復元（HTMX） |
+| `/trash/{item_id}/delete_permanently` | POST | 永久削除（HTMX） |
+
+### 6.3 テンプレートファイル
+
+- `trash.html` - メインページ（ゴミ箱リスト）
+- `partials/trash_item.html` - ゴミ箱アイテム表示（再利用パーシャル）
+
+### 6.4 ルーターファイル
+
+- `src/study_python/gtd/web/routers/trash.py`
+
+### 6.5 ロジックファイル
+
+- `src/study_python/gtd/logic/trash.py` (TrashLogic)
+
+### 6.6 機能詳細
+
+#### F-TRASH-1: ゴミ箱リスト表示
+
+**表示対象**:
+- item_status = TRASH のアイテム
+
+**ソート順序**:
+- 削除日時（新しい順）
+
+**表示要素**:
+
+| 要素 | 説明 |
+|------|------|
+| タイトル | アイテムのタイトル |
+| 削除日 | ISO 形式の削除日時 |
+| 残り日数 | 自動削除までの残り日数（最大 30 日） |
+| 復元ボタン | アイテムを復元 |
+| 削除ボタン | 永久削除 |
+
+#### F-TRASH-2: アイテム復元
+
+**URL**: POST `/trash/{item_id}/restore`
+
+**実行処理**:
+1. item_status を復元前のステータスに戻す
+   - 情報がない場合は INBOX
+
+**結果**:
+- アイテムがゴミ箱から復元
+- 元のフェーズに戻る
+- HTMX で `#trash-list` を更新
+
+#### F-TRASH-3: 永久削除
+
+**URL**: POST `/trash/{item_id}/delete_permanently`
+
+**実行処理**:
+1. データベースからアイテムを完全削除
+
+**結果**:
+- ゴミ箱から削除
+- HTMX で `#trash-list` を更新
+
+#### F-TRASH-4: 30 日自動削除
+
+**実行スケジュール**: バックグラウンドジョブ（cron など）で実行
+
+**処理**:
+1. created_at から 30 日以上経過したアイテム（item_status=TRASH）を検索
+2. データベースから完全削除
 
 ---
 
@@ -521,7 +551,7 @@ Eisenhower マトリクスで視覚化する。
 
 #### F6-1: サマリーカード
 
-**4 つのカード**:
+**4 つのカード**（シンプル統計のみ、Eisenhower マトリクスなし）:
 
 | カード | ラベル | 値 |
 |--------|-------|---|
@@ -536,15 +566,10 @@ Eisenhower マトリクスで視覚化する。
 
 1. **Inbox あり**: "N件 収集してください" → `/inbox`
 2. **明確化待ち**: "N件 分類してください" → `/clarification`
-3. **整理待ち**: "N件 優先順位をつけてください" → `/organization`
-4. **見直し待ち**: "N件 見直してください" → `/review`
-5. **アクティブタスク なし**: "やることがなくなりました" → `/inbox`
-6. **Q1 タスク あり**: "次のアクション: [最優先タスク名]" → `/execution`
-7. **その他**: "N個のアクティブタスク" → `/execution`
-
-#### F6-3: Eisenhower マトリクス表示
-
-（F3 と同仕様）
+3. **見直し待ち**: "N件 見直してください" → `/review`
+4. **アクティブタスク なし**: "やることがなくなりました" → `/inbox`
+5. **Q1 タスク あり**: "次のアクション: [最優先タスク名]" → `/execution`
+6. **その他**: "N個のアクティブタスク" → `/execution`
 
 ---
 
@@ -596,7 +621,8 @@ Eisenhower マトリクスで視覚化する。
 
 ### 9.1 機能概要
 
-トップバーに 5 つのアイコンボタンを表示し、各種モーダルを開く。
+トップバーに 6 つのアイコンボタンを表示し、各種モーダルを開く。
+新しく「ゴミ箱」アイコンが追加された。
 
 ### 9.2 URL パス（アイコンバー API）
 
@@ -611,24 +637,25 @@ Eisenhower マトリクスで視覚化する。
 
 ### 9.3 アイコン仕様
 
-| 位置 | アイコン | タイトル | モーダル ID | 説明 |
-|------|---------|---------|-----------|------|
-| 1 | 本 | チュートリアル | modal-tutorial | GTD フロー + 5 ステップ説明 |
-| 2 | ? | ヘルプ | modal-help | About + FAQ |
-| 3 | 受信箱 | 通知 | modal-inbox | 通知一覧（バッジ付き） |
-| 4 | 問い合わせ | お問い合わせ | modal-contact | Coming Soon |
-| 5 | 実績 | 実績 | modal-achievements | マイルストーン表示 |
+| 位置 | アイコン | タイトル | 説明 |
+|------|---------|---------|------|
+| 1 | 本 | チュートリアル | GTD フロー + 4 ステップ説明（F3 削除） |
+| 2 | ? | ヘルプ | About + FAQ |
+| 3 | 受信箱 | 通知 | 通知一覧（バッジ付き） |
+| 4 | 問い合わせ | お問い合わせ | Coming Soon |
+| 5 | 実績 | 実績 | マイルストーン表示 |
+| 6 | ゴミ箱 | ゴミ箱 | ゴミ箱ページへのリンク（/trash） |
 
 ### 9.4 チュートリアルモーダル (`modal-tutorial.html`)
 
 **2 タブ構成**:
 
 1. **Overview タブ**
-   - GTD フロー（5 フェーズ）の説明
+   - GTD フロー（4 フェーズ）の説明（F3: 整理は削除）
    - 各フェーズのアイコン + 簡単な説明文
 
 2. **How-to タブ**
-   - 5 ステップ説明
+   - 4 ステップ説明（従来 5 ステップ）
    - 各ステップのスクリーンショット + テキスト
 
 ### 9.5 ヘルプモーダル (`modal_help.html`)
@@ -741,14 +768,14 @@ releases.json を単一の情報源として、バージョン情報を一元管
 
 ```json
 {
-  "current_version": "1.0.0",
+  "current_version": "2.0.0",
   "releases": [
     {
-      "version": "1.0.0",
-      "date": "2026-04-06T00:00:00Z",
-      "title": "Initial Release",
-      "summary": "MindFlow FastAPI Web版の初版リリース",
-      "highlight": "Full GTD support with HTMX"
+      "version": "2.0.0",
+      "date": "2026-04-07T00:00:00Z",
+      "title": "Clarification UI Redesign",
+      "summary": "F2 明確化フェーズを 4 ボタン分類に変更。F3 整理フェーズを削除。ゴミ箱機能追加。",
+      "highlight": "4-button clarification, trash feature, simplified dashboard"
     }
   ]
 }
@@ -780,7 +807,7 @@ releases.json を単一の情報源として、バージョン情報を一元管
 ```json
 {
   "app": {
-    "name": "MindFlow"
+    "name": "Defrago"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -793,7 +820,13 @@ releases.json を単一の情報源として、バージョン情報を一元管
     "description": "気になることをすべて書き出しましょう",
     "placeholder": "新しいアイテムを入力...",
     "add_button": "追加",
-    "delete_button": "削除"
+    "delete_button": "削除",
+    "classify_buttons": {
+      "delegation": "依頼",
+      "project": "プロジェクト",
+      "do_now": "今すぐ",
+      "task": "タスク"
+    }
   },
   ...
 }
@@ -817,25 +850,66 @@ message = L["inbox"]["title"]
 
 ---
 
-## 14. UI 共通仕様
+## 14. F13: プロジェクト計画 (Project Planning Wizard)
 
-### 14.1 ナビゲーション
+### 14.1 機能概要
+
+完了したプロジェクトをさらに詳細に計画する（Natural Planning Model）。
+F5 見直しフェーズの一部として機能。
+
+### 14.2 URL パス
+
+| URL | メソッド | 説明 |
+|-----|---------|------|
+| `/review/{item_id}/plan` | GET | プロジェクト計画ウィザード表示 |
+| `/review/{item_id}/plan_step` | POST | ステップ処理（HTMX） |
+
+### 14.3 テンプレートファイル
+
+- `partials/plan_step.html` - 計画ステップ表示（再利用パーシャル）
+
+### 14.4 ロジックファイル
+
+- `src/study_python/gtd/logic/review.py` (ReviewLogic の一部)
+
+### 14.5 機能詳細
+
+#### F13-1: プロジェクト計画（Natural Planning Model）
+
+**6 ステップウィザード**:
+
+| ステップ | タイトル | 入力 |
+|---------|---------|------|
+| 1 | Purpose（目的） | テキストエリア |
+| 2 | Outcome（成果） | テキストエリア |
+| 3 | Brainstorm（ブレーンストーム） | テキストエリア（アイデア羅列） |
+| 4 | Organize（整理） | サブタスク入力（改行区切り） |
+| 5 | Support Location（支援拠点） | テキストエリア（リソース・場所） |
+| 6 | Next Actions（次のアクション） | サブタスク入力（改行区切り） |
+
+**テンプレート**: `partials/plan_step.html`
+
+---
+
+## 15. UI 共通仕様
+
+### 15.1 ナビゲーション
 
 **サイドバー**:
-- MindFlow ロゴ
-- 6 つの主要ページリンク
+- Defrago ロゴ
+- 4 つの主要ページリンク（ダッシュボード・収集・明確化・実行・見直し）※整理フェーズは v2.0.0 で削除
 - 設定 + ログアウトリンク
 
 **トップバー**:
 - ハンバーガーメニュー（モバイル）
-- 5 つのアイコンボタン（通知・ヘルプ等）
+- 6 つのアイコンボタン（通知・ヘルプ・ゴミ箱等）
 
-### 14.2 レスポンシブデザイン
+### 15.2 レスポンシブデザイン
 
 - **デスクトップ**: サイドバー常時表示
 - **モバイル**: ハンバーガーメニュー（オーバーレイ）
 
-### 14.3 スタイル・カラー
+### 15.3 スタイル・カラー
 
 **テーマ**: Catppuccin Mocha
 - bg_surface: #313244
@@ -845,7 +919,7 @@ message = L["inbox"]["title"]
 - accent_green: #a6e3a1
 - accent_mauve: #cba6f7
 
-### 14.4 モーダル
+### 15.4 モーダル
 
 **構造**:
 - オーバーレイ（クリックで閉じる）
@@ -856,9 +930,9 @@ message = L["inbox"]["title"]
 
 ---
 
-## 15. HTMX 統合パターン
+## 16. HTMX 統合パターン
 
-### 15.1 フォーム POST
+### 16.1 フォーム POST
 
 ```html
 <form hx-post="/inbox/add" hx-target="#item-list" hx-swap="innerHTML">
@@ -867,7 +941,7 @@ message = L["inbox"]["title"]
 </form>
 ```
 
-### 15.2 パーシャル更新
+### 16.2 パーシャル更新
 
 ```html
 <div id="item-list">
@@ -877,13 +951,13 @@ message = L["inbox"]["title"]
 
 **サーバー返却**: HTML フラグメント（`partials/item_list.html` をレンダリング）
 
-### 15.3 リダイレクト
+### 16.3 リダイレクト
 
 ```python
 return RedirectResponse(url="/clarification", status_code=303)
 ```
 
-### 15.4 バッジ更新
+### 16.4 バッジ更新
 
 ```html
 <span id="inbox-badge"></span>
@@ -896,30 +970,37 @@ return RedirectResponse(url="/clarification", status_code=303)
 
 ---
 
-## 16. データベーススキーマ（参考）
+## 17. データベーススキーマ（参考）
 
-### 16.1 GtdItemRow
+### 17.1 GtdItemRow
 
 | カラム | 型 | 説明 |
 |--------|---|------|
 | id | VARCHAR(36) | PK |
-| user_id | VARCHAR(36) | FK |
+| user_id | VARCHAR(36) | FK（マルチテナント分離） |
 | title | VARCHAR(500) | アイテムタイトル |
-| item_status | VARCHAR(20) | inbox/someday/reference |
-| tag | VARCHAR(20) | delegation/calendar/project/do_now/task |
-| status | VARCHAR(20) | not_started/in_progress/waiting/registered |
-| importance | INT | 1-10 |
-| urgency | INT | 1-10 |
+| item_status | VARCHAR(20) | inbox/someday/reference/trash |
+| tag | VARCHAR(20) | delegation/project/do_now/task（v2.0.0 で calendar 廃止） |
+| status | VARCHAR(20) | not_started/in_progress/waiting/done |
 | locations_json | TEXT | ["desk", "home"] |
-| time_estimate | VARCHAR(20) | within_10min/within_30min/within_1hour |
+| time_estimate | VARCHAR(20) | 10min/30min/1hour |
 | energy | VARCHAR(20) | low/medium/high |
-| parent_project_id | VARCHAR(36) | プロジェクト派生時の親 ID |
-| order | INT | グループ内の並び順 |
+| project_purpose | TEXT | プロジェクト計画: 目的 |
+| project_outcome | TEXT | プロジェクト計画: 望ましい結果 |
+| project_support_location | TEXT | プロジェクト計画: サポート資料の場所 |
+| is_next_action | BOOLEAN | プロジェクト計画: ネクストアクションフラグ |
 | deadline | VARCHAR(50) | 期限（ISO 形式） |
+| parent_project_id | VARCHAR(36) | プロジェクト派生時の親 ID |
+| parent_project_title | VARCHAR(500) | 親プロジェクト名 |
+| order (item_order) | INT | グループ内の並び順 |
+| note | TEXT | メモ |
 | created_at | VARCHAR(50) | ISO 形式 |
 | updated_at | VARCHAR(50) | ISO 形式 |
+| deleted_at | VARCHAR(50) | ゴミ箱移動日時（trash 時のみ設定、ISO 形式） |
 
-### 16.2 NotificationRow
+注: v2.0.0 で `importance`, `urgency` カラムは廃止されました。
+
+### 17.2 NotificationRow
 
 | カラム | 型 | 説明 |
 |--------|---|------|
@@ -933,9 +1014,9 @@ return RedirectResponse(url="/clarification", status_code=303)
 
 ---
 
-## 17. エラーハンドリング
+## 18. エラーハンドリング
 
-### 17.1 HTTP ステータスコード
+### 18.1 HTTP ステータスコード
 
 | コード | 状況 |
 |--------|------|
@@ -947,7 +1028,7 @@ return RedirectResponse(url="/clarification", status_code=303)
 | 429 | レート制限（ログイン試行） |
 | 500 | サーバー エラー |
 
-### 17.2 エラーメッセージ
+### 18.2 エラーメッセージ
 
 - バリデーション エラー: フォーム入力でメッセージ表示
 - レート制限: "ログイン試行回数が上限に達しました"
@@ -955,23 +1036,27 @@ return RedirectResponse(url="/clarification", status_code=303)
 
 ---
 
-## 18. 完了条件チェックリスト
+## 19. 完了条件チェックリスト
 
-- [x] 5 フェーズ（収集・明確化・整理・実行・見直し）の URL/テンプレート/ロジック仕様を記載
-- [x] ダッシュボード・認証・通知・アイコンバー・設定の URL/機能仕様を記載
+- [x] 4 フェーズ（収集・明確化・実行・見直し）の URL/テンプレート/ロジック仕様を記載
+- [x] F2 明確化フェーズを 4 ボタン分類に完全変更
+- [x] F3 整理フェーズを削除
+- [x] F-TRASH ゴミ箱機能を追加
+- [x] F1 Inbox にクイック分類ボタンを追加
+- [x] ダッシュボード・認証・通知・アイコンバー・設定・ゴミ箱の URL/機能仕様を記載
 - [x] HTMX パーシャル更新パターンを記載
-- [x] バッジ計算ロジックを記載
-- [x] Eisenhower マトリクス表示仕様を記載
 - [x] プロジェクト分解・計画ウィザードを記載
 - [x] レート制限・セッション管理・パスワードハッシングを記載
 - [x] 通知マイルストーン・実績バッジを記載
 - [x] labels.json・releases.json の管理仕様を記載
+- [x] アイコンバーにゴミ箱アイコンを追加（位置 6）
 
 ---
 
-## 19. ドキュメント更新履歴
+## 20. ドキュメント更新履歴
 
 | 日時 | 変更内容 |
 |------|---------|
+| 2026-04-07 | v2.0.0: F2 明確化フェーズを 4 ボタン分類に完全変更。F3 整理フェーズ削除。F-TRASH ゴミ箱機能追加。F1 クイック分類ボタン追加。アイコンバー 6 番目にゴミ箱追加。ダッシュボードから Eisenhower マトリクス削除。フェーズ数を 5 から 4 に変更。|
 | 2026-04-06 | FastAPI Web版に完全置き換え。PySide6 デスクトップ版から Web アーキテクチャに変更。 |
 | 2026-03-03 | （前版） |

@@ -3,12 +3,12 @@
 cd /d "%~dp0"
 
 set SECRET_KEY=local-dev-secret-key
-set DATABASE_URL=sqlite:///./mindflow_local.db
+set DATABASE_URL=sqlite:///./defrago_local.db
 set DEBUG=true
 set PORT=8080
 
 echo ========================================
-echo   MindFlow - Local Dev
+echo   Defrago - Local Dev
 echo ========================================
 echo.
 
