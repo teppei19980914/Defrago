@@ -46,9 +46,11 @@ def _sort_items_by_project(items: list) -> list:
 
 def _get_inbox_context(request: Request, repo: DbGtdRepository) -> dict[str, object]:
     logic = CollectionLogic(repo)
-    all_items = logic.get_inbox_items()
+    # 分類済みアイテム（tagあり）は実行画面で扱うため、Inbox には
+    # 未分類（tag=None）のアイテムのみを表示する。(#8)
+    all_items = logic.get_unclassified_inbox_items()
     items = _sort_items_by_project(all_items)
-    unclassified_count = sum(1 for i in all_items if i.tag is None)
+    unclassified_count = len(all_items)
 
     project_groups: dict[str, str] = {}
     for item in items:

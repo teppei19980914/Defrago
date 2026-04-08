@@ -1,5 +1,46 @@
-<div class="modal-empty">
-    <span class="modal-empty-icon">&#128679;</span>
-    <p class="coming-soon-title">{{ labels.modal_contact.coming_soon_title }}</p>
-    <p class="coming-soon-desc">{{ labels.modal_contact.coming_soon_desc }}</p>
+{% if submitted %}
+<div class="contact-result {% if success %}contact-success{% else %}contact-error{% endif %}">
+    <span class="contact-result-icon">{% if success %}&#9989;{% else %}&#10060;{% endif %}</span>
+    <p class="contact-result-text">{{ message }}</p>
 </div>
+{% else %}
+<form hx-post="/api/iconbar/contact/submit"
+      hx-target="closest .modal-body"
+      hx-swap="innerHTML"
+      class="contact-form">
+    <p class="contact-form-intro">{{ labels.modal_contact.intro }}</p>
+
+    <div class="form-group">
+        <label class="form-label" for="contact-category">{{ labels.modal_contact.category_label }}</label>
+        <select id="contact-category" name="category" class="select-input" required>
+            <option value="question">{{ labels.modal_contact.category_question }}</option>
+            <option value="bug">{{ labels.modal_contact.category_bug }}</option>
+            <option value="feature">{{ labels.modal_contact.category_feature }}</option>
+            <option value="other">{{ labels.modal_contact.category_other }}</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="contact-email">{{ labels.modal_contact.email_label }}</label>
+        <input type="email" id="contact-email" name="email"
+               class="text-input"
+               placeholder="{{ labels.modal_contact.email_placeholder }}"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="contact-text">{{ labels.modal_contact.text_label }}</label>
+        <textarea id="contact-text" name="text"
+                  class="text-input text-area-sm"
+                  rows="5"
+                  minlength="20"
+                  maxlength="2000"
+                  placeholder="{{ labels.modal_contact.text_placeholder }}"
+                  required></textarea>
+        <small class="muted-text">{{ labels.modal_contact.text_hint }}</small>
+    </div>
+
+    <p class="muted-text">{{ labels.modal_contact.privacy }}</p>
+    <button type="submit" class="btn-primary btn-full">{{ labels.modal_contact.submit }}</button>
+</form>
+{% endif %}

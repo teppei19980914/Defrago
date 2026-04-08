@@ -102,5 +102,31 @@
             </div>
         </div>
     </div>
+
+    <!-- 危険ゾーン: アカウント削除 (#6) -->
+    <div class="settings-section">
+        <div class="settings-section-header settings-section-header-danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>{{ labels.settings.section_danger }}</span>
+        </div>
+        <div class="settings-card settings-card-danger">
+            <div class="settings-item settings-item-danger">
+                <div class="settings-item-content">
+                    <strong>{{ labels.settings.account_delete_title }}</strong>
+                    <p>{{ labels.settings.account_delete_desc }}</p>
+                </div>
+            </div>
+            <form method="POST" action="/settings/delete_account" class="danger-form"
+                  onsubmit="return confirm('{{ labels.settings.account_delete_dialog_msg }}');">
+                <label class="register-ack">
+                    <input type="checkbox" name="confirm" value="yes" required>
+                    <span>{{ labels.settings.account_delete_confirm_label }}</span>
+                </label>
+                <button type="submit" class="btn-danger btn-full">
+                    &#128465; {{ labels.settings.account_delete_button }}
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

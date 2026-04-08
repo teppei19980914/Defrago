@@ -400,6 +400,29 @@ a { color: var(--accent-blue); text-decoration: none; }
 }
 .login-card .form-group { margin-bottom: 16px; }
 .error-msg { background: rgba(243,139,168,0.15); color: var(--accent-red); padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+.warning-banner {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: rgba(249,226,175,0.12);
+    border: 1px solid rgba(249,226,175,0.4);
+    border-left: 4px solid var(--accent-yellow);
+    border-radius: 6px; padding: 12px 14px; margin-bottom: 18px;
+}
+.warning-banner-icon { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
+.warning-banner-body { flex: 1; min-width: 0; }
+.warning-banner-title {
+    display: block; color: var(--accent-yellow);
+    font-size: 13px; font-weight: bold; margin-bottom: 4px;
+}
+.warning-banner-text {
+    color: var(--text-secondary); font-size: 12px;
+    line-height: 1.6; margin: 0;
+}
+.register-ack {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 12px; color: var(--text-secondary);
+    margin-bottom: 16px; cursor: pointer;
+}
+.register-ack input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; }
 
 /* Flow action (next phase navigation) */
 .flow-action { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
@@ -484,6 +507,18 @@ a { color: var(--accent-blue); text-decoration: none; }
 .settings-item-content p { font-size: 12px; color: var(--text-secondary); margin: 2px 0 0; }
 .settings-divider { height: 1px; background: var(--border); margin: 0 16px; }
 .settings-check { color: var(--accent-green); font-size: 18px; }
+
+/* Danger zone (アカウント削除) */
+.settings-section-header-danger { color: var(--accent-red); }
+.settings-card-danger {
+    border-color: rgba(243,139,168,0.45);
+    background: rgba(243,139,168,0.05);
+}
+.settings-item-danger { align-items: flex-start; }
+.settings-item-danger .settings-item-content strong { color: var(--accent-red); }
+.danger-form { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.danger-form .register-ack { margin-bottom: 0; }
+.btn-full { width: 100%; }
 
 /* Toggle switch */
 .settings-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
