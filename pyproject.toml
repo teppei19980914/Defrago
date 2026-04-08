@@ -1,6 +1,6 @@
 [project]
 name = "defrago"
-version = "3.1.0"
+version = "3.1.1"
 description = "Defrago - 脳のデフラグ・タスクマネージャ（エッセンシャル思考に基づくGTDアプリ）"
 readme = "README.md"
 requires-python = ">=3.12"
