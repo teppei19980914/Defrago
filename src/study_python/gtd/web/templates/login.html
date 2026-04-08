@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ labels.app.name }} - {{ labels.auth.login }}</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=20260408">
 </head>
 <body>
-    <div class="login-container login-two-col">
+    <div class="login-container">
         <div class="login-card">
             <h1 class="login-title">{{ labels.app.name }}</h1>
             <p class="login-subtitle">{{ labels.app.subtitle }}</p>
@@ -28,31 +28,6 @@
             {% else %}
             <p class="login-register-link">{{ labels.auth.login_to_register }} <a href="/register">{{ labels.auth.register }}</a></p>
             {% endif %}
-        </div>
-        <div class="philosophy-card">
-            <p class="philosophy-catchcopy">{{ labels.philosophy.login_catchcopy }}</p>
-            <p class="philosophy-text">
-                {{ labels.philosophy.login_line1 }}<br>
-                {{ labels.philosophy.login_line2 }}
-            </p>
-            <p class="philosophy-text">
-                {{ labels.philosophy.login_line3 }}<br>
-                {{ labels.philosophy.login_line4 }}
-            </p>
-            <div class="philosophy-principles">
-                <div class="philosophy-principle">
-                    <span class="philosophy-principle-name">{{ labels.philosophy.principle1_name }}</span>
-                    <span class="philosophy-principle-desc">{{ labels.philosophy.principle1_desc }}</span>
-                </div>
-                <div class="philosophy-principle">
-                    <span class="philosophy-principle-name">{{ labels.philosophy.principle2_name }}</span>
-                    <span class="philosophy-principle-desc">{{ labels.philosophy.principle2_desc }}</span>
-                </div>
-                <div class="philosophy-principle">
-                    <span class="philosophy-principle-name">{{ labels.philosophy.principle3_name }}</span>
-                    <span class="philosophy-principle-desc">{{ labels.philosophy.principle3_desc }}</span>
-                </div>
-            </div>
         </div>
     </div>
 </body>

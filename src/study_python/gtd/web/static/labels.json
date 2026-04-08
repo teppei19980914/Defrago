@@ -111,8 +111,6 @@
       "in_progress": "実施中",
       "done": "完了"
     },
-    "score_importance_short": "重",
-    "score_urgency_short": "緊",
     "empty_message": "実行するタスクはありません",
     "empty_link": "→ 新しく書き出す"
   },
