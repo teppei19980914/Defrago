@@ -1,6 +1,16 @@
 {
-  "current_version": "3.1.1",
+  "current_version": "3.1.2",
   "releases": [
+    {
+      "version": "3.1.2",
+      "date": "2026-04-09",
+      "title": "お問い合わせ送信エラーの修正",
+      "summary": "Google Apps Script Web App が返す 302 リダイレクトを追跡できず、お問い合わせが送信できなかった不具合を修正しました。",
+      "changes": [
+        "お問い合わせ送信時に Google Apps Script Web App の 302 リダイレクトを自動追跡するよう修正（httpx.AsyncClient の follow_redirects=True を明示）",
+        "リグレッションテストを追加し、302 リダイレクトが正常に追跡されることを検証"
+      ]
+    },
     {
       "version": "3.1.1",
       "date": "2026-04-08",
