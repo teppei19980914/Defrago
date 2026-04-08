@@ -5,7 +5,9 @@
       "Bash(python -c \"import secrets; print\\(secrets.token_urlsafe\\(48\\)\\)\")",
       "Bash(where python3:*)",
       "Bash(where py:*)",
-      "Bash(where uv:*)"
+      "Bash(where uv:*)",
+      "Bash(.venv/Scripts/python.exe -m pytest -x --timeout=60)",
+      "Bash(.venv/Scripts/python.exe -m pytest -x)"
     ]
   },
   "hooks": {
