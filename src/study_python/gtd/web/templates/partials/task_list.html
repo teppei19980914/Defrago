@@ -29,9 +29,6 @@
         <button type="submit" class="btn-order">▼</button>
     </form>
     {% endif %}
-    {% if task.importance is not none and task.urgency is not none %}
-    <span class="score-badge">{{ labels.execution.score_importance_short }}{{ task.importance }} {{ labels.execution.score_urgency_short }}{{ task.urgency }}</span>
-    {% endif %}
     {% if task.id in statuses_map %}
     <form hx-post="/execution/{{ task.id }}/status" hx-target="#task-list" hx-swap="innerHTML" style="display:inline">
         <input type="hidden" name="tag_filter" value="{{ tag_filter }}">

@@ -21,6 +21,7 @@ class WebSettings:
     secret_key: str = ""
     database_url: str = "sqlite:///./mindflow.db"
     debug: bool = False
+    contact_webhook_url: str = ""
 
 
 @lru_cache
@@ -42,4 +43,5 @@ def get_settings() -> WebSettings:
         secret_key=secret_key,
         database_url=os.environ.get("DATABASE_URL", "sqlite:///./mindflow.db"),
         debug=os.environ.get("DEBUG", "false").lower() == "true",
+        contact_webhook_url=os.environ.get("CONTACT_WEBHOOK_URL", ""),
     )

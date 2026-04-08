@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from collections import defaultdict
 
@@ -15,9 +16,13 @@ from study_python.gtd.web.auth import (
     validate_username,
     verify_credentials,
 )
-from study_python.gtd.web.dependencies import get_db_session
+from study_python.gtd.web.db_models import GtdItemRow, NotificationRow, UserRow
+from study_python.gtd.web.dependencies import get_db_session, require_auth
 from study_python.gtd.web.labels import load_labels
 from study_python.gtd.web.template_engine import templates
+
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(tags=["auth"])
@@ -164,3 +169,43 @@ async def logout(request: Request) -> RedirectResponse:
     """ログアウトを処理する."""
     request.session.clear()
     return RedirectResponse(url="/login", status_code=302)
+
+
+@router.post("/settings/delete_account")
+async def delete_account(
+    request: Request,
+    user_id: str = Depends(require_auth),
+    db: Session = Depends(get_db_session),
+) -> RedirectResponse:
+    """ログイン中ユーザーのアカウントと関連データを物理削除する (#6).
+
+    削除対象:
+      - GtdItemRow: 当該ユーザーの全GTDアイテム (Inbox/タスク/ゴミ箱を含む)
+      - NotificationRow: 当該ユーザーの全通知
+      - UserRow: ユーザー本体
+
+    確認チェックボックス (confirm=yes) が送信されていない場合は削除せず
+    設定画面にリダイレクトする。
+    削除完了後はセッションをクリアしてログイン画面へ戻す。
+    """
+    form = await request.form()
+    if str(form.get("confirm", "")).lower() != "yes":
+        return RedirectResponse(url="/settings", status_code=303)
+
+    items_deleted = db.query(GtdItemRow).filter(GtdItemRow.user_id == user_id).delete()
+    notifs_deleted = (
+        db.query(NotificationRow).filter(NotificationRow.user_id == user_id).delete()
+    )
+    user_deleted = db.query(UserRow).filter(UserRow.id == user_id).delete()
+    db.flush()
+
+    logger.warning(
+        "Account deleted: user_id=%s items=%d notifications=%d user_rows=%d",
+        user_id,
+        items_deleted,
+        notifs_deleted,
+        user_deleted,
+    )
+
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
