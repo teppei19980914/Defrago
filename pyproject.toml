@@ -1,6 +1,6 @@
 [project]
 name = "defrago"
-version = "3.1.0"
+version = "3.1.1"
 description = "Defrago - 脳のデフラグ・タスクマネージャ（エッセンシャル思考に基づくGTDアプリ）"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -25,6 +25,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "itsdangerous>=2.1.0",
     "bcrypt>=5.0.0",
+    # お問い合わせ機能 (#4) で GAS Webhook を呼び出すために使用
+    "httpx>=0.27.0",
 ]
 
 [project.optional-dependencies]
