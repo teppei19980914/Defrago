@@ -100,3 +100,28 @@ class TestInbox:
         response = client.post("/inbox/process_all", follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == "/clarification"
+
+    def test_classified_item_not_shown_in_inbox(self, client):
+        """直接分類で追加したアイテムは Inbox に表示されない (#8)."""
+        client.post(
+            "/inbox/add",
+            data={"title": "分類済みタスク", "tag": "task"},
+        )
+        client.post("/inbox/add", data={"title": "未分類アイテム"})
+
+        response = client.get("/inbox")
+        assert response.status_code == 200
+        assert "未分類アイテム" in response.text
+        assert "分類済みタスク" not in response.text
+
+    def test_unclassified_count_excludes_classified(self, client):
+        """未分類カウントには分類済みアイテムが含まれない (#8)."""
+        client.post(
+            "/inbox/add",
+            data={"title": "委任済み", "tag": "delegation"},
+        )
+        client.post("/inbox/add", data={"title": "未分類1"})
+        client.post("/inbox/add", data={"title": "未分類2"})
+
+        response = client.get("/inbox")
+        assert "2件の未分類" in response.text
