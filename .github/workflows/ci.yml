@@ -47,7 +47,16 @@ jobs:
 
       - name: Check releases.json is updated
         run: |
-          if ! git diff origin/main...HEAD --name-only | grep -q "src/study_python/gtd/web/static/releases.json"; then
+          # アプリケーションコード (src/, tests/) に変更がない場合はスキップ。
+          # CI/インフラ設定 (.github/, Dockerfile, render.yaml, docs/ 等) だけの
+          # 変更でリリースバージョンを上げる必要はない。
+          CHANGED=$(git diff origin/main...HEAD --name-only)
+          HAS_APP_CHANGES=$(echo "$CHANGED" | grep -E '^(src/|tests/|pyproject\.toml)' || true)
+          if [ -z "$HAS_APP_CHANGES" ]; then
+            echo "アプリケーションコードの変更なし。releases.json チェックをスキップ。"
+            exit 0
+          fi
+          if ! echo "$CHANGED" | grep -q "src/study_python/gtd/web/static/releases.json"; then
             echo "::error::releases.json が更新されていません。"
             echo "::error::新バージョンのリリース情報を releases.json に追加してください。"
             echo "::error::手順: docs/OPERATIONS.md の「バージョン管理・リリース」を参照。"
