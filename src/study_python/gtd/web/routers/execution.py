@@ -124,6 +124,40 @@ async def update_status(
     )
 
 
+@router.post("/bulk_status", response_class=HTMLResponse)
+async def bulk_status_update(
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """表示中の全タスクのステータスを一括更新する（HTMX）.
+
+    現在のフィルタ条件に合致する全タスクに対して、指定ステータスを適用する。
+    タスクのタグが対応しないステータスの場合はスキップする。
+    """
+    form = await request.form()
+    new_status = str(form.get("bulk_status", ""))
+    tag_filter = str(form.get("tag_filter", "all"))
+
+    if new_status:
+        logic = ExecutionLogic(repo)
+        tasks = logic.get_active_tasks()
+        if tag_filter != "all":
+            tasks = [t for t in tasks if t.tag and t.tag.value == tag_filter]
+
+        for task in tasks:
+            try:
+                logic.update_status(task.id, new_status)
+            except ValueError:
+                continue
+        repo.flush_to_db()
+
+    return templates.TemplateResponse(
+        request,
+        "partials/task_list.html",
+        _get_tasks_context(request, repo, tag_filter),
+    )
+
+
 @router.post("/{item_id}/order_up", response_class=HTMLResponse)
 async def order_up(
     item_id: str,
