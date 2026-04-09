@@ -32,6 +32,7 @@ from study_python.logging_config import setup_logging
 logger = logging.getLogger(__name__)
 
 TRASH_RETENTION_DAYS = 30
+NOTIFICATION_RETENTION_DAYS = 30
 
 
 def _migrate_schema(engine: object) -> None:
@@ -95,6 +96,35 @@ def _cleanup_expired_trash(engine: object) -> None:
             logger.info(f"Cleanup: deleted {result.rowcount} expired trash items")
 
 
+def _cleanup_old_notifications(engine: object) -> None:
+    """既読の通知で NOTIFICATION_RETENTION_DAYS 経過したものを物理削除する.
+
+    notifications テーブルが永続蓄積するのを防ぎ、Free DB の storage 上限を
+    保護するためのバッチ処理 (#C v3.1.5)。未読通知は対象外とし、ユーザーが
+    気づくまで残す。
+
+    全ユーザーを横断する SQL バッチで、DbGtdRepository を経由せず直接エンジン
+    経由で実行する。
+    """
+    from sqlalchemy import text
+
+    cutoff = (
+        datetime.now(UTC) - timedelta(days=NOTIFICATION_RETENTION_DAYS)
+    ).isoformat()
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                "DELETE FROM notifications "
+                "WHERE is_read = TRUE "
+                "AND created_at != '' "
+                "AND created_at < :cutoff"
+            ),
+            {"cutoff": cutoff},
+        )
+        if result.rowcount > 0:
+            logger.info(f"Cleanup: deleted {result.rowcount} old read notifications")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """アプリケーションのライフサイクル管理."""
@@ -103,6 +133,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Base.metadata.create_all(engine)
     _migrate_schema(engine)
     _cleanup_expired_trash(engine)
+    _cleanup_old_notifications(engine)
     logger.info("Defrago Web started")
     yield
 

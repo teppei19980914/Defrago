@@ -11,6 +11,7 @@ from study_python.gtd.web.config import get_settings
 from study_python.gtd.web.routers.iconbar import (
     _is_spammy_text,
     _reset_contact_rate_limit,
+    _reset_release_sync_cache,
 )
 
 
@@ -20,6 +21,14 @@ def _reset_contact_state():
     _reset_contact_rate_limit()
     yield
     _reset_contact_rate_limit()
+
+
+@pytest.fixture(autouse=True)
+def _reset_release_cache():
+    """各テスト前後にリリース通知同期キャッシュをリセット."""
+    _reset_release_sync_cache()
+    yield
+    _reset_release_sync_cache()
 
 
 class TestAchievementsEndpoint:
@@ -479,6 +488,234 @@ class TestContactRateLimit:
         )
         assert response.status_code == 200
         assert "送信しました" in response.text
+
+
+class TestReleaseNotificationSync:
+    """v3.1.5 #A: リリース通知同期の DB アクセス削減を検証する.
+
+    最適化前: ページロードごとに「リリース数 × SELECT」を実行
+    最適化後: 1ページロードあたり最大 1 SELECT、warm キャッシュヒット時は 0
+    """
+
+    def test_first_call_warms_cache_and_inserts_notifications(
+        self, client, test_session
+    ):
+        """初回呼び出しでリリース通知が DB に登録される."""
+        from study_python.gtd.web.db_models import NotificationRow
+
+        # 初回 badge_count 呼び出し
+        response = client.get("/api/iconbar/badge_count")
+        assert response.status_code == 200
+
+        # システム通知 (リリース通知) が複数件 DB に登録されているはず
+        test_session.expire_all()
+        rows = (
+            test_session.query(NotificationRow)
+            .filter(NotificationRow.notification_type == "system")
+            .all()
+        )
+        assert len(rows) >= 1, "リリース通知が登録されていない"
+
+    def test_warm_cache_skips_db_query(self, test_session):
+        """warm cache 状態で _sync_release_notifications を呼んでも DB に触れない.
+
+        cache に current_version が記録された状態で関数を呼び、
+        NotificationRow への SELECT/INSERT が一切発生しないことを検証する。
+        """
+        from study_python.gtd.web.routers import iconbar
+        from study_python.gtd.web.routers.iconbar import (
+            _load_releases,
+            _sync_release_notifications,
+            _synced_release_versions,
+        )
+
+        user_id = "warm-cache-user"
+        # current_version を取得してキャッシュに注入 (warm 状態を作る)
+        current_version = str(_load_releases().get("current_version", ""))
+        assert current_version, "releases.json に current_version が必要"
+        _synced_release_versions[user_id] = current_version
+
+        # DB クエリを観測するためのカウンタ
+        query_count = {"n": 0}
+        original_query = test_session.query
+
+        def _counting_query(*args, **kwargs):
+            # NotificationRow に対するクエリだけカウント
+            for arg in args:
+                if (
+                    arg is iconbar.NotificationRow
+                    or getattr(arg, "class_", None) is iconbar.NotificationRow
+                ):
+                    query_count["n"] += 1
+                    break
+            return original_query(*args, **kwargs)
+
+        test_session.query = _counting_query  # type: ignore[method-assign]
+
+        # warm cache 状態で呼び出す
+        _sync_release_notifications(test_session, user_id)
+
+        # NotificationRow に対するクエリは 0 件のはず
+        assert query_count["n"] == 0, (
+            f"warm cache 状態で {query_count['n']} 件の NotificationRow クエリが発生"
+        )
+
+    def test_no_duplicate_inserts_on_repeated_calls(self, client, test_session):
+        """複数回呼んでも通知が重複登録されないこと."""
+        from study_python.gtd.web.db_models import NotificationRow
+
+        # 3回呼ぶ
+        for _ in range(3):
+            client.get("/api/iconbar/badge_count")
+
+        test_session.expire_all()
+        rows = (
+            test_session.query(NotificationRow)
+            .filter(NotificationRow.notification_type == "system")
+            .all()
+        )
+        # 重複登録がなければ、リリース数と一致する (キャッシュにより N+1 にもならない)
+        titles = [r.title for r in rows]
+        assert len(titles) == len(set(titles)), (
+            f"重複したリリース通知が検出された: {titles}"
+        )
+
+    def test_cache_reset_after_version_change(self, client, monkeypatch):
+        """current_version が変わったらキャッシュは無効化される."""
+        from study_python.gtd.web.routers import iconbar
+
+        # 1回目: キャッシュウォーム
+        client.get("/api/iconbar/badge_count")
+
+        # _load_releases を別の current_version を返すようにモック
+        new_data = {
+            "current_version": "999.999.999",
+            "releases": [
+                {
+                    "version": "999.999.999",
+                    "date": "2099-12-31",
+                    "title": "未来のリリース",
+                    "summary": "テスト用",
+                    "changes": ["a"],
+                }
+            ],
+        }
+        sync_call_count = {"n": 0}
+
+        def _spy_load_releases():
+            sync_call_count["n"] += 1
+            return new_data
+
+        monkeypatch.setattr(iconbar, "_load_releases", _spy_load_releases)
+
+        # 2回目: バージョンが変わったのでキャッシュミス -> _load_releases 呼ばれる
+        client.get("/api/iconbar/badge_count")
+        assert sync_call_count["n"] >= 1
+
+
+class TestNotificationCleanup:
+    """v3.1.5 #C: 古い既読通知の自動クリーンアップを検証する."""
+
+    def test_cleanup_deletes_old_read_notifications(self, test_engine):
+        """30日以上前の既読通知は削除される."""
+        from datetime import UTC, datetime, timedelta
+
+        from sqlalchemy.orm import sessionmaker
+
+        from study_python.gtd.web.app import (
+            NOTIFICATION_RETENTION_DAYS,
+            _cleanup_old_notifications,
+        )
+        from study_python.gtd.web.db_models import NotificationRow
+
+        Session = sessionmaker(bind=test_engine)
+        session = Session()
+
+        old_date = (
+            datetime.now(UTC) - timedelta(days=NOTIFICATION_RETENTION_DAYS + 5)
+        ).isoformat()
+        recent_date = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+
+        session.add_all(
+            [
+                NotificationRow(
+                    id="old-read-1",
+                    user_id="user1",
+                    notification_type="system",
+                    title="古い既読",
+                    message="",
+                    is_read=True,
+                    created_at=old_date,
+                ),
+                NotificationRow(
+                    id="recent-read-1",
+                    user_id="user1",
+                    notification_type="system",
+                    title="新しい既読",
+                    message="",
+                    is_read=True,
+                    created_at=recent_date,
+                ),
+                NotificationRow(
+                    id="old-unread-1",
+                    user_id="user1",
+                    notification_type="system",
+                    title="古い未読",
+                    message="",
+                    is_read=False,
+                    created_at=old_date,
+                ),
+            ]
+        )
+        session.commit()
+        session.close()
+
+        _cleanup_old_notifications(test_engine)
+
+        session2 = Session()
+        remaining_ids = {row.id for row in session2.query(NotificationRow).all()}
+        session2.close()
+
+        # 古い既読は消える
+        assert "old-read-1" not in remaining_ids
+        # 新しい既読は残る
+        assert "recent-read-1" in remaining_ids
+        # 古い未読は残る。未読は対象外。
+        assert "old-unread-1" in remaining_ids
+
+    def test_cleanup_no_op_when_nothing_old(self, test_engine):
+        """全部新しい場合は何も削除されない."""
+        from datetime import UTC, datetime, timedelta
+
+        from sqlalchemy.orm import sessionmaker
+
+        from study_python.gtd.web.app import _cleanup_old_notifications
+        from study_python.gtd.web.db_models import NotificationRow
+
+        Session = sessionmaker(bind=test_engine)
+        session = Session()
+
+        recent_date = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+        session.add(
+            NotificationRow(
+                id="fresh-1",
+                user_id="user1",
+                notification_type="system",
+                title="新しい",
+                message="",
+                is_read=True,
+                created_at=recent_date,
+            )
+        )
+        session.commit()
+        session.close()
+
+        _cleanup_old_notifications(test_engine)
+
+        session2 = Session()
+        count = session2.query(NotificationRow).count()
+        session2.close()
+        assert count == 1
 
 
 @pytest.fixture(autouse=True)

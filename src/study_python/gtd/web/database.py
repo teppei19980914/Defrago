@@ -31,9 +31,17 @@ def get_engine(db_url: str | None = None) -> Engine:
             db_url = get_settings().database_url
         kwargs: dict[str, object] = {"echo": False}
         if db_url.startswith("postgresql"):
-            kwargs["pool_size"] = 5
-            kwargs["max_overflow"] = 10
+            # 個人/小規模向けに控えめなプールサイズ。Free Neon の compute 時間を
+            # 節約する目的 (#E v3.1.5)。
+            kwargs["pool_size"] = 2
+            kwargs["max_overflow"] = 3
             kwargs["pool_pre_ping"] = True
+            # Neon Free は 5 分アイドルで自動サスペンドする。SQLAlchemy の
+            # 接続プールがアイドル接続を抱え続けると Neon がスリープに入れず
+            # compute 時間を浪費するため、5 分より短い 280 秒で接続を切る。
+            # こうすると Neon 側の自動サスペンドタイマーが正常に走り、無人時間の
+            # compute 課金が 0 になる。
+            kwargs["pool_recycle"] = 280
         _engine = create_engine(db_url, **kwargs)
     return _engine
 
