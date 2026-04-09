@@ -25,7 +25,7 @@
     "password_confirm_placeholder": "パスワード（確認）",
     "username_hint": "ユーザー名（英数字3〜50文字）",
     "password_hint": "パスワード（8文字以上）",
-    "register_disabled": true,
+    "register_disabled": false,
     "register_disabled_message": "現在、新規登録は一時停止中です。大型アップデートを準備中ですので、こうご期待ください！",
     "login_to_register": "アカウントをお持ちでない方は",
     "register_to_login": "既にアカウントをお持ちの方は",
@@ -296,7 +296,7 @@
     "section_app_info": "アプリ情報",
     "version_label": "バージョン",
     "updated_label": "最終更新日",
-    "updated_value": "2026-04-09"
+    "updated_value": "2026-04-10"
   },
   "releases": {
     "page_title": "Defrago アップデート情報",
