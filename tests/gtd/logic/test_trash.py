@@ -6,7 +6,15 @@ import pytest
 
 from study_python.gtd.logic.collection import CollectionLogic
 from study_python.gtd.logic.trash import RETENTION_DAYS, TrashLogic
-from study_python.gtd.models import GtdItem, ItemStatus
+from study_python.gtd.models import (
+    EnergyLevel,
+    GtdItem,
+    ItemStatus,
+    Location,
+    Tag,
+    TaskStatus,
+    TimeEstimate,
+)
 from study_python.gtd.web.db_repository import DbGtdRepository
 
 
@@ -65,6 +73,96 @@ class TestTrashLogic:
         assert result is not None
         assert result.item_status == ItemStatus.INBOX
         assert result.deleted_at == ""
+
+    def test_restore_resets_classification_for_task(
+        self,
+        trash: TrashLogic,
+        repo: DbGtdRepository,
+    ):
+        """v3.1.4: タスクを復元するとタグ・ステータス・Context がクリアされる."""
+        item = GtdItem(
+            title="分類済みタスク",
+            note="重要なメモ",
+            item_status=ItemStatus.TRASH,
+            tag=Tag.TASK,
+            status=TaskStatus.IN_PROGRESS.value,
+            locations=[Location.DESK, Location.HOME],
+            time_estimate=TimeEstimate.WITHIN_30MIN,
+            energy=EnergyLevel.HIGH,
+            deleted_at="2026-04-01T00:00:00+00:00",
+        )
+        repo.add(item)
+
+        result = trash.restore(item.id)
+        assert result is not None
+        # Inbox に戻る
+        assert result.item_status == ItemStatus.INBOX
+        assert result.deleted_at == ""
+        # GTD 関連の状態は全クリア
+        assert result.tag is None
+        assert result.status is None
+        assert result.locations == []
+        assert result.time_estimate is None
+        assert result.energy is None
+        # 本質的な情報は保持
+        assert result.title == "分類済みタスク"
+        assert result.note == "重要なメモ"
+
+    def test_restore_resets_project_state(
+        self,
+        trash: TrashLogic,
+        repo: DbGtdRepository,
+    ):
+        """プロジェクトを復元すると、計画情報もすべてクリアされ Inbox の素になる."""
+        project = GtdItem(
+            title="計画済みプロジェクト",
+            item_status=ItemStatus.TRASH,
+            tag=Tag.PROJECT,
+            project_purpose="効率化を実現する",
+            project_outcome="月100時間削減",
+            project_support_location="Google Drive",
+            deleted_at="2026-04-01T00:00:00+00:00",
+        )
+        repo.add(project)
+
+        result = trash.restore(project.id)
+        assert result is not None
+        assert result.item_status == ItemStatus.INBOX
+        assert result.tag is None
+        assert result.project_purpose == ""
+        assert result.project_outcome == ""
+        assert result.project_support_location == ""
+
+    def test_restore_resets_subtask_parent_link(
+        self,
+        trash: TrashLogic,
+        repo: DbGtdRepository,
+    ):
+        """サブタスクを復元すると親プロジェクトとの紐づけもクリアされる."""
+        sub = GtdItem(
+            title="計画から生成されたサブタスク",
+            item_status=ItemStatus.TRASH,
+            tag=Tag.TASK,
+            status=TaskStatus.NOT_STARTED.value,
+            parent_project_id="proj-xyz",
+            parent_project_title="親プロジェクト",
+            order=2,
+            is_next_action=True,
+            deadline="2026-04-15",
+            deleted_at="2026-04-01T00:00:00+00:00",
+        )
+        repo.add(sub)
+
+        result = trash.restore(sub.id)
+        assert result is not None
+        assert result.item_status == ItemStatus.INBOX
+        assert result.tag is None
+        # 親プロジェクトとの紐づけはクリアされる (一律 Inbox の素)
+        assert result.parent_project_id is None
+        assert result.parent_project_title == ""
+        assert result.order is None
+        assert result.is_next_action is False
+        assert result.deadline == ""
 
     def test_restore_nonexistent(self, trash: TrashLogic):
         assert trash.restore("nonexistent") is None

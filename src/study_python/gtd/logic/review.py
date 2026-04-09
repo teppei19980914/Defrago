@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 
 from study_python.gtd.models import GtdItem, ItemStatus, Tag
 from study_python.gtd.repository_protocol import GtdRepositoryProtocol
@@ -35,20 +36,28 @@ class ReviewLogic:
         return [item for item in self._repo.get_tasks() if item.needs_review()]
 
     def delete_item(self, item_id: str) -> GtdItem | None:
-        """アイテムを物理削除する.
+        """アイテムをゴミ箱へ移動する（論理削除）.
 
-        見直しフェーズからの削除はゴミ箱を経由せず、即座に物理削除する。
+        v3.1.4 以降、削除プロセスを一本化するため、見直しフェーズからの削除も
+        ゴミ箱経由となった。即座の物理削除はゴミ箱画面または30日経過後の
+        自動クリーンアップに集約されている。
 
         Args:
             item_id: 削除するアイテムのID。
 
         Returns:
-            削除したアイテム。見つからない場合はNone。
+            ゴミ箱に移動したアイテム。見つからない場合はNone。
         """
-        removed = self._repo.remove(item_id)
-        if removed:
-            logger.info(f"Reviewed and deleted: '{removed.title}' (id={removed.id})")
-        return removed
+        item = self._repo.get(item_id)
+        if item is None:
+            logger.warning(f"Item not found: {item_id}")
+            return None
+
+        item.item_status = ItemStatus.TRASH
+        item.deleted_at = datetime.now(tz=UTC).isoformat()
+        item.touch()
+        logger.info(f"Reviewed and moved to trash: '{item.title}' (id={item.id})")
+        return item
 
     def move_to_inbox(self, item_id: str) -> GtdItem | None:
         """アイテムをタスクからInboxに戻す.

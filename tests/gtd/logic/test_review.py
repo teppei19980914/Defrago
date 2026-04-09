@@ -64,12 +64,38 @@ class TestReviewLogic:
         review_items = logic.get_review_items()
         assert len(review_items) == 2
 
-    def test_delete_item(self, logic: ReviewLogic, repo: DbGtdRepository):
+    def test_delete_item_moves_to_trash(
+        self, logic: ReviewLogic, repo: DbGtdRepository
+    ):
+        """v3.1.4: 見直しからの削除はゴミ箱移動 (論理削除) に変更."""
         item = _create_task(repo, "削除対象", status=TaskStatus.DONE.value)
         result = logic.delete_item(item.id)
         assert result is not None
         assert result.title == "削除対象"
-        assert len(repo.items) == 0
+        # 物理削除ではなくゴミ箱に移動している
+        assert len(repo.items) == 1
+        assert result.item_status == ItemStatus.TRASH
+        assert result.deleted_at != ""
+
+    def test_delete_item_project_moves_to_trash(
+        self, logic: ReviewLogic, repo: DbGtdRepository
+    ):
+        """プロジェクト (status=None) もゴミ箱に移動できる."""
+        project = _create_task(repo, "削除PJ", tag=Tag.PROJECT)
+        result = logic.delete_item(project.id)
+        assert result is not None
+        assert len(repo.items) == 1
+        assert result.item_status == ItemStatus.TRASH
+        assert result.deleted_at != ""
+
+    def test_delete_item_excluded_from_review(
+        self, logic: ReviewLogic, repo: DbGtdRepository
+    ):
+        """削除したアイテムはその後の見直し対象から外れる."""
+        item = _create_task(repo, "削除対象", status=TaskStatus.DONE.value)
+        logic.delete_item(item.id)
+        # ゴミ箱に移動済みなので needs_review() は False
+        assert logic.get_review_items() == []
 
     def test_delete_item_nonexistent(self, logic: ReviewLogic):
         result = logic.delete_item("nonexistent")
