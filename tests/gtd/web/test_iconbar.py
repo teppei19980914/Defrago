@@ -8,6 +8,18 @@ import httpx
 import pytest
 
 from study_python.gtd.web.config import get_settings
+from study_python.gtd.web.routers.iconbar import (
+    _is_spammy_text,
+    _reset_contact_rate_limit,
+)
+
+
+@pytest.fixture(autouse=True)
+def _reset_contact_state():
+    """各テスト前後にお問い合わせのレート制限状態をリセット."""
+    _reset_contact_rate_limit()
+    yield
+    _reset_contact_rate_limit()
 
 
 class TestAchievementsEndpoint:
@@ -284,6 +296,189 @@ class TestContactEndpoint:
             follow_redirects=False,
         )
         assert response.status_code in (302, 303)
+
+
+class TestIsSpammyText:
+    """_is_spammy_text の単体テスト."""
+
+    def test_dominant_single_char_is_spam(self):
+        """同じ文字が 80% 以上を占めるとスパム扱い."""
+        assert _is_spammy_text("ああああああああああああああああああああ") is True
+
+    def test_ascii_single_char_run_is_spam(self):
+        """ASCII の同一文字連打もスパム扱い."""
+        assert _is_spammy_text("a" * 30) is True
+
+    def test_low_diversity_two_chars_is_spam(self):
+        """ユニーク文字が 2 種だけならスパム扱い."""
+        assert _is_spammy_text("abababababababababababab") is True
+
+    def test_low_diversity_three_chars_is_spam(self):
+        """ユニーク文字が 3 種のみでもスパム扱い (閾値は 4 未満)."""
+        assert _is_spammy_text("abcabcabcabcabcabcabcabc") is True
+
+    def test_whitespace_only_is_spam(self):
+        """空白のみは空扱いでスパム."""
+        assert _is_spammy_text("                    ") is True
+
+    def test_legitimate_japanese_text_is_not_spam(self):
+        """普通の日本語はスパム扱いされない."""
+        assert (
+            _is_spammy_text("これは普通のお問い合わせ本文です。困っています。") is False
+        )
+
+    def test_legitimate_english_text_is_not_spam(self):
+        """普通の英文はスパム扱いされない."""
+        assert (
+            _is_spammy_text("This is a normal inquiry about the application.") is False
+        )
+
+    def test_whitespace_ignored_in_diversity_check(self):
+        """空白は文字数カウントから除外される (空白の種は増えない)."""
+        # 4 種のユニーク文字があるので OK
+        assert _is_spammy_text("a b c d e f g h i j k l m") is False
+
+    def test_exactly_80_percent_dominance_is_spam(self):
+        """閾値 80% ちょうどでもスパム扱い (>= で判定)."""
+        # 10文字中8文字がa → 80%
+        assert _is_spammy_text("aaaaaaaaBC" * 2) is True
+
+
+class TestContactRateLimit:
+    """レート制限の統合テスト.
+
+    _CONTACT_RATE_LIMIT = 10 / 時間 を前提。
+    モックした Webhook クライアントで実際に submit_contact を叩き、
+    10 件目までは成功、11 件目以降は error_rate_limit が返ることを検証。
+    """
+
+    def _setup_webhook_mock(self, monkeypatch):
+        monkeypatch.setenv("CONTACT_WEBHOOK_URL", "https://example.com/webhook")
+        get_settings.cache_clear()
+
+        class _MockAsyncClient:
+            def __init__(self, *_, **__):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_):
+                return False
+
+            async def post(self, url, content=None, headers=None):
+                return httpx.Response(200, request=httpx.Request("POST", url))
+
+        monkeypatch.setattr(
+            "study_python.gtd.web.routers.iconbar.httpx.AsyncClient",
+            _MockAsyncClient,
+        )
+
+    def test_within_limit_all_succeed(self, client, monkeypatch):
+        """上限以内 (10件) はすべて成功."""
+        self._setup_webhook_mock(monkeypatch)
+        for i in range(10):
+            response = client.post(
+                "/api/iconbar/contact/submit",
+                data={
+                    "category": "question",
+                    "email": "user@example.com",
+                    "text": f"これはテスト本文その{i}番目です。20文字以上の本文。",
+                },
+            )
+            assert response.status_code == 200
+            assert "送信しました" in response.text, f"iteration {i} failed"
+
+    def test_exceeds_limit_returns_rate_limit_error(self, client, monkeypatch):
+        """11 件目はレート制限エラー."""
+        self._setup_webhook_mock(monkeypatch)
+        # 10 件送る (上限ちょうど)
+        for i in range(10):
+            client.post(
+                "/api/iconbar/contact/submit",
+                data={
+                    "category": "question",
+                    "email": "user@example.com",
+                    "text": f"これはテスト本文その{i}番目です。20文字以上の本文。",
+                },
+            )
+        # 11 件目
+        response = client.post(
+            "/api/iconbar/contact/submit",
+            data={
+                "category": "question",
+                "email": "user@example.com",
+                "text": "これは11件目のテスト本文です。レート制限に掛かるはず。",
+            },
+        )
+        assert response.status_code == 200
+        assert "上限に達しました" in response.text
+
+    def test_validation_failure_does_not_consume_quota(self, client, monkeypatch):
+        """バリデーション失敗 (typo 等) は quota を消費しない."""
+        self._setup_webhook_mock(monkeypatch)
+        # 10 回、短すぎる本文で送信 (error_text_length で弾かれる)
+        for _ in range(10):
+            response = client.post(
+                "/api/iconbar/contact/submit",
+                data={
+                    "category": "question",
+                    "email": "user@example.com",
+                    "text": "短い",
+                },
+            )
+            assert response.status_code == 200
+            assert "20文字以上" in response.text
+        # 次に正規の送信 → まだ quota が残っているので成功するべき
+        response = client.post(
+            "/api/iconbar/contact/submit",
+            data={
+                "category": "question",
+                "email": "user@example.com",
+                "text": "これは正規のテスト本文です。20文字以上の内容です。",
+            },
+        )
+        assert response.status_code == 200
+        assert "送信しました" in response.text
+
+    def test_spammy_text_is_rejected(self, client, monkeypatch):
+        """明らかにスパムな本文は error_spam で弾かれる."""
+        self._setup_webhook_mock(monkeypatch)
+        response = client.post(
+            "/api/iconbar/contact/submit",
+            data={
+                "category": "question",
+                "email": "user@example.com",
+                "text": "あああああああああああああああああああああ",
+            },
+        )
+        assert response.status_code == 200
+        assert "同じ文字が繰り返されている" in response.text
+
+    def test_spammy_text_does_not_consume_quota(self, client, monkeypatch):
+        """スパム検出で弾かれた場合は quota を消費しない."""
+        self._setup_webhook_mock(monkeypatch)
+        # スパム本文を 10 回送信
+        for _ in range(10):
+            client.post(
+                "/api/iconbar/contact/submit",
+                data={
+                    "category": "question",
+                    "email": "user@example.com",
+                    "text": "a" * 30,
+                },
+            )
+        # 次に正規本文で成功するはず
+        response = client.post(
+            "/api/iconbar/contact/submit",
+            data={
+                "category": "question",
+                "email": "user@example.com",
+                "text": "これは正規のテスト本文です。20文字以上の内容です。",
+            },
+        )
+        assert response.status_code == 200
+        assert "送信しました" in response.text
 
 
 @pytest.fixture(autouse=True)

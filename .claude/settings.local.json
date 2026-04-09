@@ -22,7 +22,10 @@
       "Bash(gh pr create --base main --title 'hotfix: v3.1.1 - httpx未インストールによるデプロイ失敗の修正' --body ':*)",
       "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/web/test_iconbar.py -x)",
       "Bash(.venv/Scripts/python.exe -m ruff format tests/gtd/web/test_iconbar.py)",
-      "Bash(gh pr create --base main --title 'hotfix: v3.1.2 - GAS 302リダイレクト追跡漏れの修正' --body ':*)"
+      "Bash(gh pr create --base main --title 'hotfix: v3.1.2 - GAS 302リダイレクト追跡漏れの修正' --body ':*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/web/test_iconbar.py)",
+      "Bash(.venv/Scripts/python.exe -m ruff format tests/gtd/web/test_iconbar.py src/study_python/gtd/web/routers/iconbar.py)",
+      "Bash(gh pr create --base main --title 'feat: v3.1.3 - お問い合わせにレート制限とスパム検出を追加' --body ':*)"
     ]
   },
   "hooks": {
