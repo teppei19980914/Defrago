@@ -39,8 +39,10 @@ class TrashLogic:
     def restore(self, item_id: str) -> GtdItem | None:
         """アイテムをゴミ箱から復元する.
 
-        分類済みかどうかでINBOXまたは元の分類に戻す。
-        プロジェクトはINBOXに戻し、それ以外でタグ付きはそのままタスクとして復元。
+        v3.1.4 以降、復元先は一律 Inbox の素のアイテム (未分類) となる。
+        元がタスクであれプロジェクトであれサブタスクであれ、GTD 関連の状態は
+        すべてリセットされ、ユーザーは改めて明確化フェーズで分類し直す必要が
+        ある。タイトル・メモ・作成日時など本質的な情報は保持される。
 
         Args:
             item_id: 復元するアイテムのID。
@@ -52,10 +54,31 @@ class TrashLogic:
         if item is None or item.item_status != ItemStatus.TRASH:
             return None
 
+        # ゴミ箱状態を解除
         item.item_status = ItemStatus.INBOX
         item.deleted_at = ""
+
+        # 明確化フェーズで設定されるタグ・ステータスをクリア
+        item.tag = None
+        item.status = None
+
+        # タスク Context をクリア
+        item.locations = []
+        item.time_estimate = None
+        item.energy = None
+
+        # プロジェクト関連の紐づけ・計画情報をクリア
+        item.parent_project_id = None
+        item.parent_project_title = ""
+        item.order = None
+        item.project_purpose = ""
+        item.project_outcome = ""
+        item.project_support_location = ""
+        item.is_next_action = False
+        item.deadline = ""
+
         item.touch()
-        logger.info(f"Restored from trash: '{item.title}' (id={item.id})")
+        logger.info(f"Restored from trash to inbox: '{item.title}' (id={item.id})")
         return item
 
     def delete_permanently(self, item_id: str) -> GtdItem | None:
