@@ -19,7 +19,10 @@
       "Bash(gh pr create --base main --title 'release: v3.1.0 - UX改善とお問い合わせ機能' --body ':*)",
       "Bash(.venv/Scripts/python.exe -m uv lock)",
       "Bash(C:/Users/SF02512/.local/bin/uv.exe lock:*)",
-      "Bash(gh pr create --base main --title 'hotfix: v3.1.1 - httpx未インストールによるデプロイ失敗の修正' --body ':*)"
+      "Bash(gh pr create --base main --title 'hotfix: v3.1.1 - httpx未インストールによるデプロイ失敗の修正' --body ':*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/web/test_iconbar.py -x)",
+      "Bash(.venv/Scripts/python.exe -m ruff format tests/gtd/web/test_iconbar.py)",
+      "Bash(gh pr create --base main --title 'hotfix: v3.1.2 - GAS 302リダイレクト追跡漏れの修正' --body ':*)"
     ]
   },
   "hooks": {

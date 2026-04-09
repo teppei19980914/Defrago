@@ -331,7 +331,11 @@ async def submit_contact(
         "submitted_at": datetime.now(tz=UTC).isoformat(),
     }
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        # Google Apps Script の Web App は仕様上、POST に対して 302 を返し
+        # script.googleusercontent.com へリダイレクトさせるため、
+        # follow_redirects=True を明示的に指定する必要がある
+        # (httpx の既定は False で requests と異なる)。
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
             response = await client.post(
                 webhook_url,
                 content=json.dumps(payload),

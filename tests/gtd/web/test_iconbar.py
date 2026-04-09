@@ -141,10 +141,11 @@ class TestContactEndpoint:
         get_settings.cache_clear()
 
         sent_payloads: list[dict[str, Any]] = []
+        init_kwargs: dict[str, Any] = {}
 
         class _MockAsyncClient:
-            def __init__(self, *_, **__):
-                pass
+            def __init__(self, *_, **kwargs):
+                init_kwargs.update(kwargs)
 
             async def __aenter__(self):
                 return self
@@ -179,6 +180,64 @@ class TestContactEndpoint:
         assert sent["category"] == "feature"
         assert sent["email"] == "user@example.com"
         assert "ダークモード" in sent["text"]
+        # Google Apps Script の Web App は POST に対し 302 を返す仕様のため、
+        # httpx.AsyncClient は follow_redirects=True で初期化されていること。
+        # これがないと v3.1.1 時点のように Contact 機能がリダイレクトエラーで
+        # 送信できなくなる。
+        assert init_kwargs.get("follow_redirects") is True
+
+    def test_submit_contact_follows_gas_redirect(self, client, monkeypatch):
+        """GAS Web App が返す 302 リダイレクトを追跡できることを検証 (#4 regression)."""
+        monkeypatch.setenv("CONTACT_WEBHOOK_URL", "https://example.com/webhook")
+        get_settings.cache_clear()
+
+        call_count = {"n": 0}
+
+        class _RedirectingClient:
+            """実際の GAS 挙動を再現するクライアント.
+
+            follow_redirects=True で初期化されていなければ 302 をそのまま返し、
+            呼び出し側の raise_for_status() で失敗する。
+            follow_redirects=True なら 200 を返す。
+            """
+
+            def __init__(self, *_, **kwargs):
+                self._follow = bool(kwargs.get("follow_redirects", False))
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_):
+                return False
+
+            async def post(self, url, content=None, headers=None):
+                call_count["n"] += 1
+                if self._follow:
+                    return httpx.Response(200, request=httpx.Request("POST", url))
+                return httpx.Response(
+                    302,
+                    headers={
+                        "Location": "https://script.googleusercontent.com/macros/echo"
+                    },
+                    request=httpx.Request("POST", url),
+                )
+
+        monkeypatch.setattr(
+            "study_python.gtd.web.routers.iconbar.httpx.AsyncClient",
+            _RedirectingClient,
+        )
+
+        response = client.post(
+            "/api/iconbar/contact/submit",
+            data={
+                "category": "question",
+                "email": "user@example.com",
+                "text": "302 リダイレクト追跡のリグレッションテスト本文です。",
+            },
+        )
+        assert response.status_code == 200
+        assert "送信しました" in response.text
+        assert call_count["n"] == 1
 
     def test_submit_contact_handles_webhook_failure(self, client, monkeypatch):
         """Webhook が例外を投げた場合はネットワークエラーメッセージを返す."""
