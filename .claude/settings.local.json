@@ -25,7 +25,12 @@
       "Bash(gh pr create --base main --title 'hotfix: v3.1.2 - GAS 302リダイレクト追跡漏れの修正' --body ':*)",
       "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/web/test_iconbar.py)",
       "Bash(.venv/Scripts/python.exe -m ruff format tests/gtd/web/test_iconbar.py src/study_python/gtd/web/routers/iconbar.py)",
-      "Bash(gh pr create --base main --title 'feat: v3.1.3 - お問い合わせにレート制限とスパム検出を追加' --body ':*)"
+      "Bash(gh pr create --base main --title 'feat: v3.1.3 - お問い合わせにレート制限とスパム検出を追加' --body ':*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/logic/test_review.py tests/gtd/logic/test_trash.py)",
+      "Bash(gh pr create --base main --title 'refactor: v3.1.4 - 削除プロセスをゴミ箱経由に一本化' --body ':*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/web/test_iconbar.py::TestReleaseNotificationSync tests/gtd/web/test_iconbar.py::TestNotificationCleanup -x)",
+      "Bash(.venv/Scripts/python.exe -m ruff check tests/gtd/web/test_iconbar.py --fix)",
+      "Bash(gh pr create --base main --title 'perf: v3.1.5 - DBコスト最適化 第一弾 \\(A+E+C\\)' --body ':*)"
     ]
   },
   "hooks": {
