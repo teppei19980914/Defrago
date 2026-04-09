@@ -1,6 +1,19 @@
 {
-  "current_version": "3.1.4",
+  "current_version": "3.1.5",
   "releases": [
+    {
+      "version": "3.1.5",
+      "date": "2026-04-09",
+      "title": "DBコスト最適化 第一弾",
+      "summary": "Neon Free プランの compute hours / storage を節約するため、リリース通知の同期を最適化し、DB接続プールを調整し、古い既読通知を自動クリーンアップするようにしました。",
+      "changes": [
+        "リリース通知同期処理の N+1 クエリを解消（リリース数 N 件のSELECT → 1件）",
+        "リリース通知同期にプロセス内キャッシュを導入（warm リクエストはDB接続なし）",
+        "SQLAlchemy 接続プールの pool_recycle を 280秒 に設定（Neonの5分自動サスペンドが確実に効くように）",
+        "プールサイズを個人利用向けに縮小（pool_size 5→2, max_overflow 10→3）",
+        "既読の通知を 30日経過後に自動物理削除するバッチを起動時に実行（notifications テーブルの永続蓄積を防止）"
+      ]
+    },
     {
       "version": "3.1.4",
       "date": "2026-04-09",

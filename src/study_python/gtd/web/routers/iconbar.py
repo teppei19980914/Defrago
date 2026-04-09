@@ -50,37 +50,73 @@ def _load_releases() -> dict:
 
 # --- リリース通知の自動配信 ---
 
+# プロセス内キャッシュ: ユーザーごとに「最後に同期したリリースバージョン」を保持。
+# warm リクエストでは _sync_release_notifications が DB に触れずに早期 return できる。
+# Render 再起動でリセットされるが、その場合は次回リクエストで一度だけ同期されるため
+# 整合性の問題はない。Free プラン向けのコスト最適化 (#A v3.1.5)。
+_synced_release_versions: dict[str, str] = {}
+
+
+def _reset_release_sync_cache() -> None:
+    """テスト用: リリース同期キャッシュをクリアする."""
+    _synced_release_versions.clear()
+
 
 def _sync_release_notifications(db: Session, user_id: str) -> None:
     """リリースノートに基づく開発者通知をユーザーに配信する.
 
     まだ配信されていないリリースの通知を自動生成する。
-    dedup_key（notification_type + title）で重複を防止する。
+    dedup_key (notification_type + title) で重複を防止する。
+
+    最適化 (#A v3.1.5):
+      - プロセス内キャッシュで warm リクエストの DB アクセスを 0 にする
+      - キャッシュ未ヒット時も、既存タイトルを 1 クエリで取得して N+1 を解消
     """
     data = _load_releases()
-    for release in data.get("releases", []):
-        title = f"v{release['version']} {release['title']}"
-        existing = (
-            db.query(NotificationRow)
-            .filter(
-                NotificationRow.user_id == user_id,
-                NotificationRow.notification_type == "system",
-                NotificationRow.title == title,
-            )
-            .first()
+    current_version = str(data.get("current_version", ""))
+
+    # キャッシュヒット: 既にこのバージョンで同期済みなら DB に一切触らない
+    if current_version and _synced_release_versions.get(user_id) == current_version:
+        return
+
+    releases = data.get("releases", [])
+    if not releases:
+        _synced_release_versions[user_id] = current_version
+        return
+
+    # 既存のシステム通知タイトルを 1 クエリで取得 (N+1 解消)
+    existing_titles = {
+        row[0]
+        for row in db.query(NotificationRow.title)
+        .filter(
+            NotificationRow.user_id == user_id,
+            NotificationRow.notification_type == "system",
         )
-        if existing is None:
-            notif = NotificationRow(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                notification_type="system",
-                title=title,
-                message=release.get("summary", ""),
-                is_read=False,
-                created_at=release.get("date", datetime.now(tz=UTC).isoformat()),
-            )
-            db.add(notif)
-    db.flush()
+        .all()
+    }
+
+    inserted = 0
+    for release in releases:
+        title = f"v{release['version']} {release['title']}"
+        if title in existing_titles:
+            continue
+        notif = NotificationRow(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            notification_type="system",
+            title=title,
+            message=release.get("summary", ""),
+            is_read=False,
+            created_at=release.get("date", datetime.now(tz=UTC).isoformat()),
+        )
+        db.add(notif)
+        inserted += 1
+
+    if inserted > 0:
+        db.flush()
+
+    # キャッシュを更新 (今後 warm リクエストでは早期 return される)
+    _synced_release_versions[user_id] = current_version
 
 
 # --- 通知（受信ボックス） ---
