@@ -36,7 +36,9 @@ body:has(.login-container) { overflow: auto; height: auto; }
 a { color: var(--accent-blue); text-decoration: none; }
 
 /* Layout */
-.app-layout { display: grid; grid-template-columns: 1fr; height: 100vh; width: 100vw; }
+/* 100dvh は iOS Safari 等でアドレスバーを考慮した動的ビューポート高さ。
+   100vh をフォールバックに残し、dvh 対応ブラウザではそちらを使う (#3)。 */
+.app-layout { display: grid; grid-template-columns: 1fr; height: 100vh; height: 100dvh; width: 100vw; }
 .sidebar {
     position: fixed; left: -300px; top: 0; bottom: 0; width: 280px; z-index: 50;
     background: var(--bg-secondary); border-right: 1px solid var(--border);
@@ -200,6 +202,9 @@ a { color: var(--accent-blue); text-decoration: none; }
     color: var(--text-primary); font-size: 20px; padding: 8px 12px;
     border-radius: 8px; cursor: pointer;
 }
+/* サイドバーが開いているとき、ハンバーガーボタンを z-index 50 のサイドバーの
+   下に潜らせて「Defrago」テキストとの被りを解消する (#1) */
+.sidebar.open ~ .content .hamburger { z-index: 30; }
 
 /* Page */
 .page-container { padding: 24px; padding-top: 8px; flex: 1; width: 100%; min-height: 0; display: flex; flex-direction: column; }
@@ -644,6 +649,17 @@ a { color: var(--accent-blue); text-decoration: none; }
     border-top: 1px solid var(--border);
 }
 
+/* Bulk action */
+.bulk-action-bar {
+    margin-bottom: 12px; padding: 10px 14px;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.bulk-action-bar form {
+    display: flex; align-items: center; gap: 8px;
+}
+.bulk-label { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+
 /* Trash */
 .trash-list { display: flex; flex-direction: column; gap: 12px; }
 .trash-card {
@@ -721,6 +737,23 @@ a { color: var(--accent-blue); text-decoration: none; }
         left: calc(-1 * min(300px, 90vw));
     }
     .app-title { font-size: 20px; }
+
+    /* スマホ: コンテンツ領域のスクロールを確実にする (#3)。
+       .content が flex: 1 で高さ制約を受けていても、
+       内部コンテンツが溢れた場合にタッチスクロールを有効にする。 */
+    .content {
+        -webkit-overflow-scrolling: touch;
+        overflow-y: auto;
+        min-height: 0;
+    }
+    .page-container {
+        overflow-y: auto;
+        min-height: 0;
+        flex: 1;
+    }
+
+    /* 一括操作バーをモバイルで縦並びに */
+    .bulk-action-bar form { flex-wrap: wrap; }
 }
 
 /* iOS Safari 等で画面の向き切替時にフォントが拡大される現象を抑止 */

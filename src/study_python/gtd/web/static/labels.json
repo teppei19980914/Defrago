@@ -114,7 +114,10 @@
       "done": "完了"
     },
     "empty_message": "実行するタスクはありません",
-    "empty_link": "→ 新しく書き出す"
+    "empty_link": "→ 新しく書き出す",
+    "bulk_label": "一括操作:",
+    "bulk_select": "ステータスを選択",
+    "bulk_apply": "適用"
   },
   "review": {
     "title": "見直し",

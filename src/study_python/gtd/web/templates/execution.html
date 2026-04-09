@@ -10,6 +10,21 @@
         <a href="/execution?tag=task" class="btn-sm {% if tag_filter == 'task' %}btn-primary{% else %}btn-secondary{% endif %}">{{ labels.execution.tags.task }}</a>
     </div>
     <p class="muted-text">{{ count }} {{ labels.execution.count_suffix }}</p>
+    {% if tasks %}
+    <div class="bulk-action-bar">
+        <form hx-post="/execution/bulk_status" hx-target="#task-list" hx-swap="innerHTML">
+            <input type="hidden" name="tag_filter" value="{{ tag_filter }}">
+            <span class="bulk-label">{{ labels.execution.bulk_label }}</span>
+            <select name="bulk_status" class="select-input select-sm" required>
+                <option value="" disabled selected>{{ labels.execution.bulk_select }}</option>
+                {% for val, label in status_display.items() %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn-sm btn-primary">{{ labels.execution.bulk_apply }}</button>
+        </form>
+    </div>
+    {% endif %}
     <div id="task-list">
         {% include "partials/task_list.html" %}
     </div>
