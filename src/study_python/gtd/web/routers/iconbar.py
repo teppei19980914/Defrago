@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 import uuid
+from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -260,6 +262,80 @@ _CONTACT_MIN_LEN = 20
 _CONTACT_MAX_LEN = 2000
 _CONTACT_VALID_CATEGORIES = {"question", "bug", "feature", "other"}
 
+# --- レート制限 ---
+# 1時間あたり同一キーから 10 件まで送信を許可する。
+# Gmail の 100通/日という GAS 側の上限を考慮した、正規ユーザーに不便を
+# 与えない程度の値。単一プロセス内のインメモリ保持で、プロセス再起動で
+# リセットされる (Render Free プランでは再起動は稀で、この設計で十分)。
+_CONTACT_RATE_LIMIT = 10
+_CONTACT_RATE_WINDOW_SECONDS = 3600
+_contact_submissions: dict[str, list[float]] = defaultdict(list)
+
+# --- スパム検出 (#コンテンツ妥当性) ---
+# 1 文字が全体の 80% 以上を占めていれば「連打」とみなす閾値。
+# YumeHashi の `_isRepetitive` と揃える。
+_CONTACT_DOMINANT_CHAR_RATIO = 0.8
+# ユニーク文字がこの数以下なら「文字種不足」とみなす閾値。
+_CONTACT_MIN_UNIQUE_CHARS = 4
+
+
+def _get_contact_client_key(request: Request, user_id: str) -> str:
+    """レート制限のキー. user_id と IP の組で識別する.
+
+    user_id のみだと複数アカウント作成で突破されやすく、
+    IP のみだと NAT 配下のユーザーが巻き添えになるため併用する。
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    return f"{user_id}|{client_ip}"
+
+
+def _is_contact_rate_limited(key: str) -> bool:
+    """指定キーがお問い合わせ送信のレート制限を超えているか判定する.
+
+    時間窓外の記録は随時破棄する (手動 GC)。
+    """
+    now = time.time()
+    recent = [
+        t for t in _contact_submissions[key] if now - t < _CONTACT_RATE_WINDOW_SECONDS
+    ]
+    _contact_submissions[key] = recent
+    return len(recent) >= _CONTACT_RATE_LIMIT
+
+
+def _record_contact_submission(key: str) -> None:
+    """お問い合わせ送信の試行を記録する (レート制限の分母)."""
+    _contact_submissions[key].append(time.time())
+
+
+def _reset_contact_rate_limit() -> None:
+    """テスト用: 全ユーザーのレート制限記録をクリアする."""
+    _contact_submissions.clear()
+
+
+def _is_spammy_text(text: str) -> bool:
+    """お問い合わせ本文がスパム的かを判定する.
+
+    以下のいずれかに該当すれば True:
+      1. 空白を除いた文字列が空 (全部空白)
+      2. 1 文字が空白除外後の長さの 80% 以上を占める (例: 'あああ...')
+      3. ユニーク文字種数が 4 未満 (例: 'ababab...', '????????')
+
+    本関数は長さチェックの後に呼ばれる前提 (20文字以上)。
+    """
+    compact = re.sub(r"\s", "", text)
+    if not compact:
+        return True
+
+    char_counts: dict[str, int] = {}
+    for ch in compact:
+        char_counts[ch] = char_counts.get(ch, 0) + 1
+
+    max_count = max(char_counts.values())
+    if max_count / len(compact) >= _CONTACT_DOMINANT_CHAR_RATIO:
+        return True
+
+    return len(char_counts) < _CONTACT_MIN_UNIQUE_CHARS
+
 
 @router.get("/contact", response_class=HTMLResponse)
 async def get_contact(request: Request) -> HTMLResponse:
@@ -296,7 +372,22 @@ async def submit_contact(
 
     環境変数 CONTACT_WEBHOOK_URL に GAS Web App の URL を設定する。
     未設定の場合はエラーメッセージを返す。
+
+    セキュリティハードニング:
+      - レート制限 (user_id + IP 単位で 10 件/時間)
+      - 本文スパム検出 (単一文字支配 / 文字種不足)
     """
+    # レート制限チェックはバリデーションより先に実施する。
+    # 失敗応答でもトークンが消費されないようにしたいためバリデーション後に
+    # 記録するが、上限超過ユーザーに対してフォーム解析まで走らせない意味で
+    # 最初に判定する。
+    rate_key = _get_contact_client_key(request, user_id)
+    if _is_contact_rate_limited(rate_key):
+        logger.warning("Contact rate limit exceeded: key=%s", rate_key)
+        return _render_contact_result(
+            request, success=False, message_key="error_rate_limit"
+        )
+
     form = await request.form()
     category = str(form.get("category", "")).strip()
     email = str(form.get("email", "")).strip()
@@ -314,6 +405,13 @@ async def submit_contact(
             request, success=False, message_key="error_text_length"
         )
 
+    # スパム検出。長さチェック通過後に実施する。
+    if _is_spammy_text(text):
+        logger.warning(
+            "Contact text rejected as spammy: user=%s len=%d", user_id, len(text)
+        )
+        return _render_contact_result(request, success=False, message_key="error_spam")
+
     settings = get_settings()
     webhook_url = settings.contact_webhook_url
     if not webhook_url:
@@ -321,6 +419,9 @@ async def submit_contact(
         return _render_contact_result(
             request, success=False, message_key="error_unavailable"
         )
+
+    # バリデーションとスパム検出を通過したので試行を記録 (typo は数えない)
+    _record_contact_submission(rate_key)
 
     payload = {
         "type": "inquiry_defrago",
