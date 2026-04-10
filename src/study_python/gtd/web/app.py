@@ -44,6 +44,23 @@ def _migrate_schema(engine: object) -> None:
     from sqlalchemy import inspect, text
 
     insp = inspect(engine)
+
+    # users テーブルのマイグレーション
+    if insp.has_table("users"):
+        user_cols = {c["name"] for c in insp.get_columns("users")}
+        user_new_columns = {
+            "total_items_count": "INTEGER DEFAULT 0",
+            "completed_items_count": "INTEGER DEFAULT 0",
+        }
+        with engine.begin() as conn:
+            for col_name, col_def in user_new_columns.items():
+                if col_name not in user_cols:
+                    conn.execute(
+                        text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}")
+                    )
+                    logger.info(f"Migration: added column '{col_name}' to users")
+
+    # gtd_items テーブルのマイグレーション
     if not insp.has_table("gtd_items"):
         return
     existing = {c["name"] for c in insp.get_columns("gtd_items")}
