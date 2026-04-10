@@ -74,22 +74,18 @@
     <form hx-post="/review/{{ item.id }}/plan/organize" hx-target="#plan-area" hx-swap="innerHTML">
         <div class="form-group">
             <label class="form-label">{{ labels.plan.organize_label }}</label>
-            <div class="organize-list">
+            <div class="organize-list" id="organize-list">
                 {% for bi in brainstorm_items %}
-                <div class="organize-row">
-                    <span class="organize-index">#{{ loop.index }}</span>
+                <div class="organize-row" data-index="{{ loop.index0 }}">
+                    <span class="organize-index">#<span class="organize-num">{{ loop.index }}</span></span>
                     <input type="text" name="task_title" value="{{ bi }}" class="text-input organize-title">
                     <input type="date" name="task_deadline" class="text-input organize-deadline">
+                    <button type="button" class="btn-order" onclick="moveOrganizeRow(this, -1)" title="上に移動">&#9650;</button>
+                    <button type="button" class="btn-order" onclick="moveOrganizeRow(this, 1)" title="下に移動">&#9660;</button>
+                    <button type="button" class="btn-sm btn-danger" onclick="removeOrganizeRow(this)" title="削除">&#10005;</button>
                 </div>
                 {% endfor %}
             </div>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">{{ labels.plan.support_label }}</label>
-            <p class="form-hint">{{ labels.plan.support_hint }}</p>
-            <input type="text" name="support_location" value="{{ item.project_support_location }}"
-                   class="text-input" placeholder="{{ labels.plan.support_placeholder }}">
         </div>
 
         <div class="btn-row">
@@ -98,6 +94,31 @@
                     type="button" class="btn-secondary">{{ labels.plan.back_first }}</button>
         </div>
     </form>
+    <script>
+    function moveOrganizeRow(btn, direction) {
+        var row = btn.closest('.organize-row');
+        var list = document.getElementById('organize-list');
+        var rows = Array.from(list.querySelectorAll('.organize-row'));
+        var idx = rows.indexOf(row);
+        var targetIdx = idx + direction;
+        if (targetIdx < 0 || targetIdx >= rows.length) return;
+        if (direction < 0) {
+            list.insertBefore(row, rows[targetIdx]);
+        } else {
+            list.insertBefore(rows[targetIdx], row);
+        }
+        renumberOrganizeRows();
+    }
+    function removeOrganizeRow(btn) {
+        btn.closest('.organize-row').remove();
+        renumberOrganizeRows();
+    }
+    function renumberOrganizeRows() {
+        document.querySelectorAll('#organize-list .organize-row').forEach(function(row, i) {
+            row.querySelector('.organize-num').textContent = i + 1;
+        });
+    }
+    </script>
 </div>
 
 {% elif step == 6 %}
@@ -113,7 +134,6 @@
     <div class="plan-context">
         <strong>{{ labels.plan.purpose_prefix }}</strong> {{ item.project_purpose }}<br>
         <strong>{{ labels.plan.outcome_prefix }}</strong> {{ item.project_outcome }}
-        {% if item.project_support_location %}<br><strong>{{ labels.plan.support_prefix }}</strong> {{ item.project_support_location }}{% endif %}
     </div>
     {% endif %}
 

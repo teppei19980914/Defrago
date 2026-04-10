@@ -190,19 +190,9 @@ async def save_organize(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """Step 4-5: 組織化・サポート資料場所を受け取り、Step 6へ進む."""
+    """Step 4-5: 組織化結果を受け取り、Step 6へ進む."""
     validate_item_id(item_id)
     form = await request.form()
-
-    support_location = str(form.get("support_location", "")).strip()
-    logic = ReviewLogic(repo)
-    logic.save_project_plan(
-        item_id,
-        purpose=repo.get(item_id).project_purpose if repo.get(item_id) else "",
-        outcome=repo.get(item_id).project_outcome if repo.get(item_id) else "",
-        support_location=support_location,
-    )
-    repo.flush_to_db()
 
     # フォームから組織化されたタスク情報を取得
     titles = form.getlist("task_title")
