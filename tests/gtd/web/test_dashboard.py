@@ -19,7 +19,7 @@ class TestDashboard:
         """空の状態ではクリアメッセージが表示される."""
         response = client.get("/")
         assert response.status_code == 200
-        assert "クリア" in response.text
+        assert "デフラグ完了" in response.text
 
     def test_dashboard_guides_to_clarification_when_unclassified(self, client):
         """未分類のInboxアイテムがあれば明確化フェーズへ誘導."""
