@@ -122,17 +122,17 @@ def _sync_release_notifications(db: Session, user_id: str) -> None:
 # --- 通知（受信ボックス） ---
 
 
-def _notification_sort_key(row: NotificationRow) -> tuple[int, str]:
+def _notification_sort_key(row: NotificationRow) -> str:
     """通知のソートキーを返す.
 
-    システム通知 (リリース) はタイトルにバージョン番号が含まれるため
-    title の降順でバージョン順に並ぶ。それ以外は created_at 降順。
-    未読を既読より上に表示するため、is_read で先にグルーピングする。
+    システム通知 (リリース) はタイトルに vX.Y.Z が含まれるため
+    title の降順でバージョン番号順に並ぶ。
+    それ以外 (実績通知等) は created_at 降順。
+    未読/既読でソート順は変えない (既読にしても位置が動かない)。
     """
-    read_order = 0 if not row.is_read else 1
     if row.notification_type == "system":
-        return (read_order, row.title)
-    return (read_order, row.created_at or "")
+        return row.title
+    return row.created_at or ""
 
 
 @router.get("/notifications", response_class=HTMLResponse)
