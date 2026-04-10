@@ -1,7 +1,6 @@
 """明確化ルーター.
 
-エッセンシャル思考に基づき、Inboxの未分類アイテムを4つのタグに分類する。
-質問形式（Yes/No）を廃止し、4つのボタンによる即時分類とスキップ・削除を提供する。
+未分類アイテムを一覧表示し、個別または一括で4分類に振り分ける。
 """
 
 from __future__ import annotations
@@ -27,17 +26,15 @@ router = APIRouter(
 )
 
 
+_VALID_TAGS = {"delegation", "project", "do_now", "task"}
+
+
 def _get_context(request: Request, repo: DbGtdRepository) -> dict[str, object]:
     logic = ClarificationLogic(repo)
     items = logic.get_pending_items()
-    current = items[0] if items else None
     return {
         "active_page": "/clarification",
         "items": items,
-        "current": current,
-        "total": len(items),
-        "remaining": len(items),
-        "index": 0 if not items else 1,
     }
 
 
@@ -59,10 +56,7 @@ async def classify(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """アイテムを4分類のいずれかに分類する（HTMX）.
-
-    tag: delegation, project, do_now, task のいずれか
-    """
+    """アイテムを4分類のいずれかに分類する（HTMX）."""
     validate_item_id(item_id)
     logic = ClarificationLogic(repo)
 
@@ -79,42 +73,8 @@ async def classify(
 
     return templates.TemplateResponse(
         request,
-        "partials/clarification_step.html",
+        "partials/clarification_list.html",
         _get_context(request, repo),
-    )
-
-
-@router.post("/{item_id}/skip", response_class=HTMLResponse)
-async def skip_item(
-    item_id: str,
-    request: Request,
-    repo: DbGtdRepository = Depends(get_repository),
-) -> HTMLResponse:
-    """アイテムをスキップして次のアイテムに進む（HTMX）.
-
-    スキップしたアイテムはInboxに残ったまま次のアイテムを表示する。
-    現在のアイテムを末尾に移動するため、updated_atを更新する。
-    """
-    validate_item_id(item_id)
-    item = repo.get(item_id)
-    if item is not None:
-        item.touch()
-        repo.flush_to_db()
-
-    # スキップしたアイテムは末尾に回すため、明確化対象から除外する
-    logic = ClarificationLogic(repo)
-    items = [i for i in logic.get_pending_items() if i.id != item_id]
-    current = items[0] if items else None
-    context = {
-        "active_page": "/clarification",
-        "items": items,
-        "current": current,
-        "total": len(items),
-        "remaining": len(items),
-        "index": 0 if not items else 1,
-    }
-    return templates.TemplateResponse(
-        request, "partials/clarification_step.html", context
     )
 
 
@@ -132,6 +92,82 @@ async def trash_item(
 
     return templates.TemplateResponse(
         request,
-        "partials/clarification_step.html",
+        "partials/clarification_list.html",
+        _get_context(request, repo),
+    )
+
+
+@router.post("/bulk_classify", response_class=HTMLResponse)
+async def bulk_classify(
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """選択したアイテムを一括分類する（HTMX）.
+
+    selected_ids が空の場合は全未分類アイテムを対象にする。
+    """
+    form = await request.form()
+    bulk_tag = str(form.get("bulk_tag", "")).strip()
+    selected_ids_raw = str(form.get("selected_ids", "")).strip()
+
+    if bulk_tag in _VALID_TAGS:
+        logic = ClarificationLogic(repo)
+        items = logic.get_pending_items()
+
+        if selected_ids_raw:
+            selected_ids = {
+                sid.strip() for sid in selected_ids_raw.split(",") if sid.strip()
+            }
+            items = [i for i in items if i.id in selected_ids]
+
+        classifiers = {
+            "delegation": logic.classify_as_delegation,
+            "project": logic.classify_as_project,
+            "do_now": logic.classify_as_do_now,
+            "task": logic.classify_as_task,
+        }
+        classifier = classifiers[bulk_tag]
+        for item in items:
+            classifier(item.id)
+
+        repo.flush_to_db()
+
+    return templates.TemplateResponse(
+        request,
+        "partials/clarification_list.html",
+        _get_context(request, repo),
+    )
+
+
+@router.post("/bulk_trash", response_class=HTMLResponse)
+async def bulk_trash(
+    request: Request,
+    repo: DbGtdRepository = Depends(get_repository),
+) -> HTMLResponse:
+    """選択したアイテムを一括でゴミ箱に移動する（HTMX）.
+
+    selected_ids が空の場合は全未分類アイテムを対象にする。
+    """
+    form = await request.form()
+    selected_ids_raw = str(form.get("selected_ids", "")).strip()
+
+    logic = ClarificationLogic(repo)
+    collection = CollectionLogic(repo)
+    items = logic.get_pending_items()
+
+    if selected_ids_raw:
+        selected_ids = {
+            sid.strip() for sid in selected_ids_raw.split(",") if sid.strip()
+        }
+        items = [i for i in items if i.id in selected_ids]
+
+    for item in items:
+        collection.move_to_trash(item.id)
+
+    repo.flush_to_db()
+
+    return templates.TemplateResponse(
+        request,
+        "partials/clarification_list.html",
         _get_context(request, repo),
     )

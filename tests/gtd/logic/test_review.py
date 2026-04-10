@@ -39,15 +39,15 @@ def _create_task(
 class TestReviewLogic:
     """ReviewLogicのテスト."""
 
-    def test_get_review_items_completed(
+    def test_get_review_items_completed_not_included(
         self, logic: ReviewLogic, repo: DbGtdRepository
     ):
+        """完了タスクは見直し対象外（ゴミ箱に自動移動される前提）."""
         _create_task(repo, "完了", status=TaskStatus.DONE.value)
         _create_task(repo, "未完了")
 
         review_items = logic.get_review_items()
-        assert len(review_items) == 1
-        assert review_items[0].title == "完了"
+        assert len(review_items) == 0
 
     def test_get_review_items_project(self, logic: ReviewLogic, repo: DbGtdRepository):
         _create_task(repo, "プロジェクト", tag=Tag.PROJECT)
@@ -56,13 +56,17 @@ class TestReviewLogic:
         assert len(review_items) == 1
         assert review_items[0].title == "プロジェクト"
 
-    def test_get_review_items_both(self, logic: ReviewLogic, repo: DbGtdRepository):
+    def test_get_review_items_project_only(
+        self, logic: ReviewLogic, repo: DbGtdRepository
+    ):
+        """見直し対象はプロジェクトのみ。完了タスクと未完了タスクは対象外."""
         _create_task(repo, "完了", status=TaskStatus.DONE.value)
         _create_task(repo, "プロジェクト", tag=Tag.PROJECT)
         _create_task(repo, "未完了")
 
         review_items = logic.get_review_items()
-        assert len(review_items) == 2
+        assert len(review_items) == 1
+        assert review_items[0].title == "プロジェクト"
 
     def test_delete_item_moves_to_trash(
         self, logic: ReviewLogic, repo: DbGtdRepository

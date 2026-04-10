@@ -57,9 +57,9 @@ class TestAchievementsEndpoint:
         assert "Inbox追加数" in response.text
         assert ">2<" in response.text or ">2 <" in response.text
 
-    def test_inbox_added_count_includes_classified(self, client):
-        """Inbox 追加数には分類済みアイテムも含まれる."""
-        client.post("/inbox/add", data={"title": "classified", "tag": "task"})
+    def test_inbox_added_count_includes_item(self, client):
+        """Inbox 追加数にはアイテムが含まれる."""
+        client.post("/inbox/add", data={"title": "テストアイテム"})
         response = client.get("/api/iconbar/achievements")
         assert response.status_code == 200
         assert ">1<" in response.text

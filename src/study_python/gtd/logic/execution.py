@@ -1,6 +1,7 @@
 """実行フェーズのビジネスロジック.
 
 タスクのステータスを変更する（プロジェクトタグを除く）。
+完了になったタスクはゴミ箱に自動移動する。
 """
 
 from __future__ import annotations
@@ -81,6 +82,19 @@ class ExecutionLogic:
         item.status = new_status
         item.touch()
         logger.info(f"Updated status to '{new_status}': '{item.title}' (id={item.id})")
+
+        # 完了になったタスクはゴミ箱に自動移動する。
+        # 見直しフェーズを経由せず直接ゴミ箱に入れることで、
+        # ユーザーの操作ステップを削減する。
+        if item.is_done():
+            from datetime import UTC, datetime
+
+            from study_python.gtd.models import ItemStatus
+
+            item.item_status = ItemStatus.TRASH
+            item.deleted_at = datetime.now(tz=UTC).isoformat()
+            logger.info(f"Auto-trashed completed task: '{item.title}' (id={item.id})")
+
         return item
 
     def get_available_statuses(self, item_id: str) -> list[str] | None:

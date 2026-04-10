@@ -3,8 +3,50 @@
 <div class="page-container">
     <h2 class="page-title">{{ labels.clarification.title }}</h2>
     <p class="page-desc">{{ labels.clarification.description }}</p>
-    <div id="clarification-area">
-        {% include "partials/clarification_step.html" %}
+    <p class="muted-text">{{ items | length }}{{ labels.clarification.remaining_suffix }}</p>
+    {% if items %}
+    <div class="bulk-action-bar">
+        <form id="clarify-bulk-form" hx-post="/clarification/bulk_classify" hx-target="#clarification-list" hx-swap="innerHTML">
+            <input type="hidden" name="selected_ids" id="clarify-selected-ids" value="">
+            <label class="bulk-check-all">
+                <input type="checkbox" id="clarify-check-all" onchange="toggleAllClarify(this.checked)">
+                <span>{{ labels.execution.bulk_select_all }}</span>
+            </label>
+            <span class="bulk-label">{{ labels.clarification.bulk_label }}</span>
+            <select name="bulk_tag" class="select-input select-sm" required>
+                <option value="" disabled selected>{{ labels.clarification.bulk_select }}</option>
+                <option value="delegation">{{ labels.execution.tags.delegation }}</option>
+                <option value="project">{{ labels.execution.tags.project }}</option>
+                <option value="do_now">{{ labels.execution.tags.do_now }}</option>
+                <option value="task">{{ labels.execution.tags.task }}</option>
+            </select>
+            <button type="submit" class="btn-sm btn-primary" onclick="collectClarifyIds()">{{ labels.execution.bulk_apply }}</button>
+            <button type="button" class="btn-sm btn-danger" onclick="collectClarifyIds(); bulkTrash()">{{ labels.clarification.trash_button }}</button>
+        </form>
+    </div>
+    {% endif %}
+    <div id="clarification-list">
+        {% include "partials/clarification_list.html" %}
     </div>
 </div>
+<script>
+function toggleAllClarify(checked) {
+    document.querySelectorAll('.clarify-checkbox').forEach(function(cb) {
+        cb.checked = checked;
+    });
+}
+function collectClarifyIds() {
+    var ids = [];
+    document.querySelectorAll('.clarify-checkbox:checked').forEach(function(cb) {
+        ids.push(cb.value);
+    });
+    document.getElementById('clarify-selected-ids').value = ids.join(',');
+}
+function bulkTrash() {
+    var form = document.getElementById('clarify-bulk-form');
+    form.setAttribute('hx-post', '/clarification/bulk_trash');
+    htmx.trigger(form, 'submit');
+    form.setAttribute('hx-post', '/clarification/bulk_classify');
+}
+</script>
 {% endblock %}

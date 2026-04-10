@@ -1,0 +1,27 @@
+{% for item in items %}
+<div class="task-row">
+    <input type="checkbox" class="clarify-checkbox" value="{{ item.id }}">
+    <span class="task-title">{{ item.title }}</span>
+    <form hx-post="/clarification/{{ item.id }}/classify/delegation" hx-target="#clarification-list" hx-swap="innerHTML" style="display:inline">
+        <button type="submit" class="btn-sm btn-secondary">{{ labels.execution.tags.delegation }}</button>
+    </form>
+    <form hx-post="/clarification/{{ item.id }}/classify/project" hx-target="#clarification-list" hx-swap="innerHTML" style="display:inline">
+        <button type="submit" class="btn-sm btn-secondary">{{ labels.execution.tags.project }}</button>
+    </form>
+    <form hx-post="/clarification/{{ item.id }}/classify/do_now" hx-target="#clarification-list" hx-swap="innerHTML" style="display:inline">
+        <button type="submit" class="btn-sm btn-secondary">{{ labels.execution.tags.do_now }}</button>
+    </form>
+    <form hx-post="/clarification/{{ item.id }}/classify/task" hx-target="#clarification-list" hx-swap="innerHTML" style="display:inline">
+        <button type="submit" class="btn-sm btn-secondary">{{ labels.execution.tags.task }}</button>
+    </form>
+    <form hx-post="/clarification/{{ item.id }}/trash" hx-target="#clarification-list" hx-swap="innerHTML" style="display:inline">
+        <button type="submit" class="btn-sm btn-danger">&#128465;</button>
+    </form>
+</div>
+{% endfor %}
+{% if not items %}
+<div class="flow-message">
+    <span class="flow-message-text">{{ labels.clarification.done_message }}</span>
+    <a href="/execution" class="flow-message-link">{{ labels.clarification.done_link }}</a>
+</div>
+{% endif %}

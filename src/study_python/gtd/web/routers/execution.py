@@ -129,20 +129,29 @@ async def bulk_status_update(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """表示中の全タスクのステータスを一括更新する（HTMX）.
+    """タスクのステータスを一括更新する（HTMX）.
 
-    現在のフィルタ条件に合致する全タスクに対して、指定ステータスを適用する。
+    selected_ids が空の場合はフィルタ中の全タスクを対象にする。
+    selected_ids にカンマ区切りの ID が指定された場合はそれだけを対象にする。
     タスクのタグが対応しないステータスの場合はスキップする。
     """
     form = await request.form()
     new_status = str(form.get("bulk_status", ""))
     tag_filter = str(form.get("tag_filter", "all"))
+    selected_ids_raw = str(form.get("selected_ids", "")).strip()
 
     if new_status:
         logic = ExecutionLogic(repo)
-        tasks = logic.get_active_tasks()
-        if tag_filter != "all":
-            tasks = [t for t in tasks if t.tag and t.tag.value == tag_filter]
+
+        if selected_ids_raw:
+            selected_ids = {
+                sid.strip() for sid in selected_ids_raw.split(",") if sid.strip()
+            }
+            tasks = [t for t in logic.get_active_tasks() if t.id in selected_ids]
+        else:
+            tasks = logic.get_active_tasks()
+            if tag_filter != "all":
+                tasks = [t for t in tasks if t.tag and t.tag.value == tag_filter]
 
         for task in tasks:
             try:

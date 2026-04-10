@@ -1,6 +1,6 @@
 [project]
 name = "defrago"
-version = "3.2.0"
+version = "3.3.0"
 description = "Defrago - 脳のデフラグ・タスクマネージャ（エッセンシャル思考に基づくGTDアプリ）"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -92,6 +92,7 @@ ignore = [
 ]
 "src/study_python/gtd/logic/**/*.py" = [
     "TCH",    # Logic modules need runtime imports
+    "PLC0415", # Dynamic imports for conditional logic (e.g. auto-trash on done)
 ]
 "src/study_python/gtd/web/**/*.py" = [
     "TCH",    # Web modules need runtime imports for FastAPI DI

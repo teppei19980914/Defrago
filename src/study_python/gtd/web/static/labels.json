@@ -85,14 +85,15 @@
   },
   "clarification": {
     "title": "明確化",
-    "description": "Inboxの未分類アイテムを4つの分類に振り分けましょう。",
+    "description": "Inboxの未分類アイテムを4つの分類に振り分けましょう。個別または一括で分類できます。",
     "remaining_suffix": "件の未分類アイテム",
     "delegation_desc": "他の人でもできる",
     "project_desc": "複数のアクションが必要",
     "do_now_desc": "今この場でできる",
     "task_desc": "環境や状況が必要",
-    "skip_button": "スキップ",
     "trash_button": "削除",
+    "bulk_label": "一括分類:",
+    "bulk_select": "分類を選択",
     "done_message": "すべてのアイテムを分類しました",
     "done_link": "→ 実行へ進む"
   },
@@ -117,11 +118,12 @@
     "empty_link": "→ 新しく書き出す",
     "bulk_label": "一括操作:",
     "bulk_select": "ステータスを選択",
+    "bulk_select_all": "全選択",
     "bulk_apply": "適用"
   },
   "review": {
     "title": "見直し",
-    "description": "完了タスクとプロジェクトを振り返り、整理しましょう（削除したアイテムはゴミ箱に移動し、30日後に自動で完全削除されます）",
+    "description": "プロジェクトを振り返り、整理しましょう（完了タスクは自動的にゴミ箱へ移動します）",
     "completed_label": "完了:",
     "project_label": "プロジェクト:",
     "count_suffix": "件",

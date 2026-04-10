@@ -102,20 +102,14 @@ async def add_item(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """アイテムを追加する（HTMX）.
-
-    formのtagパラメータが指定されていれば直接分類する。
-    指定されていなければ未分類でInboxに登録する。
-    """
+    """アイテムを未分類でInboxに追加する（HTMX）."""
     form = await request.form()
     title = str(form.get("title", "")).strip()
-    tag_value = str(form.get("tag", "")).strip()
 
     logic = CollectionLogic(repo)
     if title:
         try:
-            tag = Tag(tag_value) if tag_value in _VALID_TAGS else None
-            logic.add_to_inbox(title, tag=tag)
+            logic.add_to_inbox(title)
             repo.flush_to_db()
         except ValueError:
             pass
