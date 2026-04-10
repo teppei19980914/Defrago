@@ -10,6 +10,7 @@
     {% set _current_project.id = '' %}
 {% endif %}
 <div class="task-row {% if task.parent_project_id %}task-row-child{% endif %}">
+    <input type="checkbox" class="task-checkbox" value="{{ task.id }}">
     {% if task.tag %}
     <span class="tag-badge tag-{{ task.tag.value }}">
         {{ tag_display.get(task.tag.value, task.tag.value) }}

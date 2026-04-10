@@ -12,8 +12,13 @@
     <p class="muted-text">{{ count }} {{ labels.execution.count_suffix }}</p>
     {% if tasks %}
     <div class="bulk-action-bar">
-        <form hx-post="/execution/bulk_status" hx-target="#task-list" hx-swap="innerHTML">
+        <form id="bulk-form" hx-post="/execution/bulk_status" hx-target="#task-list" hx-swap="innerHTML">
             <input type="hidden" name="tag_filter" value="{{ tag_filter }}">
+            <input type="hidden" name="selected_ids" id="bulk-selected-ids" value="">
+            <label class="bulk-check-all">
+                <input type="checkbox" id="bulk-check-all" onchange="toggleAllTasks(this.checked)">
+                <span>{{ labels.execution.bulk_select_all }}</span>
+            </label>
             <span class="bulk-label">{{ labels.execution.bulk_label }}</span>
             <select name="bulk_status" class="select-input select-sm" required>
                 <option value="" disabled selected>{{ labels.execution.bulk_select }}</option>
@@ -21,7 +26,7 @@
                 <option value="{{ val }}">{{ label }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn-sm btn-primary">{{ labels.execution.bulk_apply }}</button>
+            <button type="submit" class="btn-sm btn-primary" onclick="collectSelectedIds()">{{ labels.execution.bulk_apply }}</button>
         </form>
     </div>
     {% endif %}
@@ -29,4 +34,18 @@
         {% include "partials/task_list.html" %}
     </div>
 </div>
+<script>
+function toggleAllTasks(checked) {
+    document.querySelectorAll('.task-checkbox').forEach(function(cb) {
+        cb.checked = checked;
+    });
+}
+function collectSelectedIds() {
+    var ids = [];
+    document.querySelectorAll('.task-checkbox:checked').forEach(function(cb) {
+        ids.push(cb.value);
+    });
+    document.getElementById('bulk-selected-ids').value = ids.join(',');
+}
+</script>
 {% endblock %}

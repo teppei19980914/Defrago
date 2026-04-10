@@ -9,25 +9,6 @@
             <input type="text" name="title" id="inbox-title" placeholder="{{ labels.inbox.placeholder }}" class="text-input" autocomplete="off" maxlength="500" required>
             <button type="submit" class="btn-primary">{{ labels.inbox.add_button }}</button>
         </div>
-        <div class="quick-classify-row">
-            <span class="quick-classify-label">{{ labels.inbox.quick_classify_label }}</span>
-            <button type="submit" name="tag" value="delegation" class="quick-tag-btn quick-tag-delegation">
-                <span class="quick-tag-icon">&#128100;</span>
-                <span>{{ labels.execution.tags.delegation }}</span>
-            </button>
-            <button type="submit" name="tag" value="project" class="quick-tag-btn quick-tag-project">
-                <span class="quick-tag-icon">&#128203;</span>
-                <span>{{ labels.execution.tags.project }}</span>
-            </button>
-            <button type="submit" name="tag" value="do_now" class="quick-tag-btn quick-tag-do_now">
-                <span class="quick-tag-icon">&#9889;</span>
-                <span>{{ labels.execution.tags.do_now }}</span>
-            </button>
-            <button type="submit" name="tag" value="task" class="quick-tag-btn quick-tag-task">
-                <span class="quick-tag-icon">&#9989;</span>
-                <span>{{ labels.execution.tags.task }}</span>
-            </button>
-        </div>
     </form>
     <script>
     (function() {

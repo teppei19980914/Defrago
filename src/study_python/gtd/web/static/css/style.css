@@ -659,6 +659,15 @@ a { color: var(--accent-blue); text-decoration: none; }
     display: flex; align-items: center; gap: 8px;
 }
 .bulk-label { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.bulk-check-all {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+}
+.bulk-check-all input[type="checkbox"] { accent-color: var(--accent-blue); }
+.task-checkbox {
+    accent-color: var(--accent-blue); flex-shrink: 0; cursor: pointer;
+    width: 16px; height: 16px;
+}
 
 /* Trash */
 .trash-list { display: flex; flex-direction: column; gap: 12px; }

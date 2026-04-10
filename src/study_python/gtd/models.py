@@ -167,10 +167,14 @@ class GtdItem:
         return self.status == "done"
 
     def needs_review(self) -> bool:
-        """見直し対象かを返す."""
+        """見直し対象かを返す.
+
+        完了タスクは実行画面でステータスが done に変わった時点で
+        ゴミ箱に自動移動されるため、見直し対象はプロジェクトのみ。
+        """
         if self.item_status == ItemStatus.TRASH:
             return False
-        return self.is_done() or self.tag == Tag.PROJECT
+        return self.tag == Tag.PROJECT
 
     def is_in_trash(self) -> bool:
         """ゴミ箱内のアイテムかを返す."""

@@ -101,27 +101,21 @@ class TestInbox:
         assert response.status_code == 303
         assert response.headers["location"] == "/clarification"
 
-    def test_classified_item_not_shown_in_inbox(self, client):
-        """直接分類で追加したアイテムは Inbox に表示されない (#8)."""
-        client.post(
-            "/inbox/add",
-            data={"title": "分類済みタスク", "tag": "task"},
-        )
-        client.post("/inbox/add", data={"title": "未分類アイテム"})
+    def test_all_items_added_as_unclassified(self, client):
+        """全てのアイテムは未分類で登録される（直接分類は廃止）."""
+        client.post("/inbox/add", data={"title": "アイテムA"})
+        client.post("/inbox/add", data={"title": "アイテムB"})
 
         response = client.get("/inbox")
         assert response.status_code == 200
-        assert "未分類アイテム" in response.text
-        assert "分類済みタスク" not in response.text
+        assert "アイテムA" in response.text
+        assert "アイテムB" in response.text
 
-    def test_unclassified_count_excludes_classified(self, client):
-        """未分類カウントには分類済みアイテムが含まれない (#8)."""
+    def test_tag_param_is_ignored(self, client):
+        """tag パラメータを送っても未分類として登録される."""
         client.post(
             "/inbox/add",
-            data={"title": "委任済み", "tag": "delegation"},
+            data={"title": "タスクっぽいやつ", "tag": "task"},
         )
-        client.post("/inbox/add", data={"title": "未分類1"})
-        client.post("/inbox/add", data={"title": "未分類2"})
-
         response = client.get("/inbox")
-        assert "2件の未分類" in response.text
+        assert "タスクっぽいやつ" in response.text

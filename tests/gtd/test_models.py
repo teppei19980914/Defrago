@@ -141,9 +141,10 @@ class TestGtdItem:
         )
         assert item.needs_review() is False
 
-    def test_needs_review_true_when_done(self):
+    def test_needs_review_false_when_done(self):
+        """完了タスクは見直し対象外（ゴミ箱に自動移動される前提）."""
         item = GtdItem(title="テスト", tag=Tag.TASK, status=TaskStatus.DONE.value)
-        assert item.needs_review() is True
+        assert item.needs_review() is False
 
     def test_needs_review_true_for_project(self):
         item = GtdItem(title="テスト", tag=Tag.PROJECT)
