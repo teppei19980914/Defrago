@@ -122,6 +122,19 @@ def _sync_release_notifications(db: Session, user_id: str) -> None:
 # --- 通知（受信ボックス） ---
 
 
+def _notification_sort_key(row: NotificationRow) -> tuple[int, str]:
+    """通知のソートキーを返す.
+
+    システム通知 (リリース) はタイトルにバージョン番号が含まれるため
+    title の降順でバージョン順に並ぶ。それ以外は created_at 降順。
+    未読を既読より上に表示するため、is_read で先にグルーピングする。
+    """
+    read_order = 0 if not row.is_read else 1
+    if row.notification_type == "system":
+        return (read_order, row.title)
+    return (read_order, row.created_at or "")
+
+
 @router.get("/notifications", response_class=HTMLResponse)
 async def get_notifications(
     request: Request,
@@ -130,12 +143,8 @@ async def get_notifications(
 ) -> HTMLResponse:
     """通知一覧を返す（HTMX）."""
     _sync_release_notifications(db, user_id)
-    rows = (
-        db.query(NotificationRow)
-        .filter(NotificationRow.user_id == user_id)
-        .order_by(NotificationRow.created_at.desc())
-        .all()
-    )
+    rows = db.query(NotificationRow).filter(NotificationRow.user_id == user_id).all()
+    rows.sort(key=_notification_sort_key, reverse=True)
     return templates.TemplateResponse(
         request,
         "partials/modal_inbox.html",

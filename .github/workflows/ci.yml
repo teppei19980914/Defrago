@@ -47,11 +47,11 @@ jobs:
 
       - name: Check releases.json is updated
         run: |
-          # アプリケーションコード (src/, tests/) に変更がない場合はスキップ。
-          # CI/インフラ設定 (.github/, Dockerfile, render.yaml, docs/ 等) だけの
-          # 変更でリリースバージョンを上げる必要はない。
+          # Python コードや pyproject.toml に変更がない場合はスキップ。
+          # テンプレート (*.html) / 静的ファイル (css/js/json) / CI設定 /
+          # ドキュメント等だけの変更ではリリースバージョンを上げる必要はない。
           CHANGED=$(git diff origin/main...HEAD --name-only)
-          HAS_APP_CHANGES=$(echo "$CHANGED" | grep -E '^(src/|tests/|pyproject\.toml)' || true)
+          HAS_APP_CHANGES=$(echo "$CHANGED" | grep -E '\.(py|toml)$' | grep -v '__pycache__' || true)
           if [ -z "$HAS_APP_CHANGES" ]; then
             echo "アプリケーションコードの変更なし。releases.json チェックをスキップ。"
             exit 0

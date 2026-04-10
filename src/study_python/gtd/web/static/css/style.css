@@ -31,7 +31,11 @@ body {
     line-height: 1.5;
     height: 100%; overflow: hidden;
 }
+/* base.html を使わない独立ページ (login / register / releases) では
+   body の overflow: hidden を解除してスクロールを有効にする。
+   .app-layout がない = base.html 未使用のページ。 */
 body:has(.login-container) { overflow: auto; height: auto; }
+body:has(.releases-page) { overflow: auto; height: auto; }
 
 a { color: var(--accent-blue); text-decoration: none; }
 
@@ -92,7 +96,9 @@ a { color: var(--accent-blue); text-decoration: none; }
 .modal-dialog {
     background: var(--bg-secondary); border: 1px solid var(--border);
     border-radius: 12px; width: 480px; max-width: 95vw; max-height: 80vh;
-    display: flex; flex-direction: column; overflow: hidden;
+    display: flex; flex-direction: column;
+    /* overflow: hidden を使わない。モバイルでタッチスクロールを阻害するため。
+       内部スクロールは .modal-body の overflow-y: auto で担保する。 */
 }
 .modal-header {
     display: flex; justify-content: space-between; align-items: center;
