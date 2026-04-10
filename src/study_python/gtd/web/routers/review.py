@@ -184,49 +184,18 @@ async def save_brainstorm(
     )
 
 
-@router.post("/{item_id}/plan/organize", response_class=HTMLResponse)
-async def save_organize(
-    item_id: str,
-    request: Request,
-    repo: DbGtdRepository = Depends(get_repository),
-) -> HTMLResponse:
-    """Step 4-5: 組織化結果を受け取り、Step 6へ進む."""
-    validate_item_id(item_id)
-    form = await request.form()
-
-    # フォームから組織化されたタスク情報を取得
-    titles = form.getlist("task_title")
-    deadlines = form.getlist("task_deadline")
-    brainstorm_items = [str(t) for t in titles if str(t).strip()]
-    deadline_list = [str(d) for d in deadlines]
-
-    item = repo.get(item_id)
-    return templates.TemplateResponse(
-        request,
-        "partials/plan_step.html",
-        {
-            "request": request,
-            "item": item,
-            "step": 6,
-            "brainstorm_items": brainstorm_items,
-            "deadlines": deadline_list,
-        },
-    )
-
-
 @router.post("/{item_id}/plan/execute", response_class=HTMLResponse)
 async def execute_plan(
     item_id: str,
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
 ) -> HTMLResponse:
-    """Step 6: ネクストアクションを確定し、サブタスクを生成する."""
+    """組織化結果からサブタスクを生成し、実行フェーズに送る."""
     validate_item_id(item_id)
     form = await request.form()
 
     titles = form.getlist("task_title")
     deadlines = form.getlist("task_deadline")
-    next_actions = form.getlist("next_action")
 
     sub_tasks: list[dict[str, str | bool]] = []
     for i, title in enumerate(titles):
@@ -237,7 +206,7 @@ async def execute_plan(
             {
                 "title": title_str,
                 "deadline": str(deadlines[i]) if i < len(deadlines) else "",
-                "is_next_action": str(i) in [str(n) for n in next_actions],
+                "is_next_action": False,
             }
         )
 
