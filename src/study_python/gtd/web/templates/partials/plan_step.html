@@ -71,7 +71,7 @@
     <h3 class="plan-step-title">{{ labels.plan.step45_title }}</h3>
     <p class="muted-text">{{ labels.plan.step45_desc }}</p>
 
-    <form hx-post="/review/{{ item.id }}/plan/organize" hx-target="#plan-area" hx-swap="innerHTML">
+    <form hx-post="/review/{{ item.id }}/plan/execute" hx-target="#item-list" hx-swap="innerHTML">
         <div class="form-group">
             <label class="form-label">{{ labels.plan.organize_label }}</label>
             <div class="organize-list" id="organize-list">
@@ -89,7 +89,7 @@
         </div>
 
         <div class="btn-row">
-            <button type="submit" class="btn-primary">{{ labels.plan.next_action }}</button>
+            <button type="submit" class="btn-primary">{{ labels.plan.execute_button }}</button>
             <button hx-get="/review/{{ item.id }}/plan?step=1" hx-target="#plan-area" hx-swap="innerHTML"
                     type="button" class="btn-secondary">{{ labels.plan.back_first }}</button>
         </div>
@@ -119,49 +119,5 @@
         });
     }
     </script>
-</div>
-
-{% elif step == 6 %}
-<div class="plan-wizard">
-    <div class="plan-header">
-        <span class="plan-project-title">{{ item.title }}</span>
-        <span class="plan-step-badge">{{ labels.plan.step6_badge }}</span>
-    </div>
-    <h3 class="plan-step-title">{{ labels.plan.step6_title }}</h3>
-    <p class="muted-text">{{ labels.plan.step6_desc }}</p>
-
-    {% if item.project_purpose %}
-    <div class="plan-context">
-        <strong>{{ labels.plan.purpose_prefix }}</strong> {{ item.project_purpose }}<br>
-        <strong>{{ labels.plan.outcome_prefix }}</strong> {{ item.project_outcome }}
-    </div>
-    {% endif %}
-
-    <form hx-post="/review/{{ item.id }}/plan/execute" hx-target="#item-list" hx-swap="innerHTML">
-        <div class="form-group">
-            <div class="next-action-list">
-                {% for bi in brainstorm_items %}
-                <div class="next-action-row">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="next_action" value="{{ loop.index0 }}">
-                        <span class="next-action-badge">NA</span>
-                    </label>
-                    <input type="hidden" name="task_title" value="{{ bi }}">
-                    <span class="next-action-title">{{ bi }}</span>
-                    <input type="hidden" name="task_deadline" value="{% if deadlines and loop.index0 < deadlines|length %}{{ deadlines[loop.index0] }}{% endif %}">
-                    {% if deadlines and loop.index0 < deadlines|length and deadlines[loop.index0] %}
-                    <span class="next-action-deadline">&#128197; {{ deadlines[loop.index0] }}</span>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="btn-row">
-            <button type="submit" class="btn-primary">{{ labels.plan.execute_button }}</button>
-            <button hx-get="/review/{{ item.id }}/plan?step=1" hx-target="#plan-area" hx-swap="innerHTML"
-                    type="button" class="btn-secondary">{{ labels.plan.back_first }}</button>
-        </div>
-    </form>
 </div>
 {% endif %}
