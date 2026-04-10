@@ -10,4 +10,14 @@
         {% include "partials/item_list.html" %}
     </div>
 </div>
+<script>
+(function() {
+    var planArea = document.getElementById('plan-area');
+    var itemList = document.getElementById('item-list');
+    var observer = new MutationObserver(function() {
+        itemList.style.display = planArea.innerHTML.trim() ? 'none' : '';
+    });
+    observer.observe(planArea, { childList: true, subtree: true });
+})();
+</script>
 {% endblock %}
