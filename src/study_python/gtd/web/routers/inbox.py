@@ -8,11 +8,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.orm import Session
 
 from study_python.gtd.logic.collection import CollectionLogic
 from study_python.gtd.models import Tag
+from study_python.gtd.web.db_models import UserRow
 from study_python.gtd.web.db_repository import DbGtdRepository
 from study_python.gtd.web.dependencies import (
+    get_db_session,
     get_repository,
     require_auth,
     validate_item_id,
@@ -101,6 +104,8 @@ async def inbox_page(
 async def add_item(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
+    user_id: str = Depends(require_auth),
+    db: Session = Depends(get_db_session),
 ) -> HTMLResponse:
     """アイテムを未分類でInboxに追加する（HTMX）."""
     form = await request.form()
@@ -111,6 +116,11 @@ async def add_item(
         try:
             logic.add_to_inbox(title)
             repo.flush_to_db()
+            # 累計カウンタをインクリメント
+            user = db.query(UserRow).filter(UserRow.id == user_id).first()
+            if user:
+                user.total_items_count = (user.total_items_count or 0) + 1
+                db.flush()
         except ValueError:
             pass
     return templates.TemplateResponse(

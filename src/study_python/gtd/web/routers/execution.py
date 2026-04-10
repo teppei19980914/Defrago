@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
 
 from study_python.gtd.logic.execution import ExecutionLogic
 from study_python.gtd.models import get_status_enum_for_tag
+from study_python.gtd.web.db_models import UserRow
 from study_python.gtd.web.db_repository import DbGtdRepository
 from study_python.gtd.web.dependencies import (
+    get_db_session,
     get_repository,
     require_auth,
     validate_item_id,
@@ -98,11 +101,23 @@ async def execution_page(
     )
 
 
+def _increment_completed_counter(db: Session, user_id: str, count: int = 1) -> None:
+    """完了カウンタをインクリメントする."""
+    if count <= 0:
+        return
+    user = db.query(UserRow).filter(UserRow.id == user_id).first()
+    if user:
+        user.completed_items_count = (user.completed_items_count or 0) + count
+        db.flush()
+
+
 @router.post("/{item_id}/status", response_class=HTMLResponse)
 async def update_status(
     item_id: str,
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
+    user_id: str = Depends(require_auth),
+    db: Session = Depends(get_db_session),
 ) -> HTMLResponse:
     """ステータスを更新する（HTMX）."""
     validate_item_id(item_id)
@@ -112,8 +127,10 @@ async def update_status(
 
     logic = ExecutionLogic(repo)
     try:
-        logic.update_status(item_id, new_status)
+        result = logic.update_status(item_id, new_status)
         repo.flush_to_db()
+        if result and result.is_done():
+            _increment_completed_counter(db, user_id)
     except ValueError:
         pass
 
@@ -128,6 +145,8 @@ async def update_status(
 async def bulk_status_update(
     request: Request,
     repo: DbGtdRepository = Depends(get_repository),
+    user_id: str = Depends(require_auth),
+    db: Session = Depends(get_db_session),
 ) -> HTMLResponse:
     """タスクのステータスを一括更新する（HTMX）.
 
@@ -140,6 +159,7 @@ async def bulk_status_update(
     tag_filter = str(form.get("tag_filter", "all"))
     selected_ids_raw = str(form.get("selected_ids", "")).strip()
 
+    completed_count = 0
     if new_status:
         logic = ExecutionLogic(repo)
 
@@ -155,10 +175,13 @@ async def bulk_status_update(
 
         for task in tasks:
             try:
-                logic.update_status(task.id, new_status)
+                result = logic.update_status(task.id, new_status)
+                if result and result.is_done():
+                    completed_count += 1
             except ValueError:
                 continue
         repo.flush_to_db()
+        _increment_completed_counter(db, user_id, completed_count)
 
     return templates.TemplateResponse(
         request,

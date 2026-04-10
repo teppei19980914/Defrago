@@ -239,15 +239,17 @@ async def get_achievements(
 ) -> HTMLResponse:
     """実績データを返す（HTMX）.
 
-    表示項目（#1）:
-      - Inbox追加数: ゴミ箱以外の全アイテム数
-        (未分類・分類済み・完了済みをすべて含む)
-      - 完了数: 完了済みアイテム数
+    UserRow の累計カウンタを使用して実績を表示する。
+    物理削除されたアイテムもカウントに含まれる。
+      - Inbox追加数: total_items_count (累計)
+      - 完了数: completed_items_count (累計)
       - 完了率: 完了数 / Inbox追加数 * 100 (%)
     """
-    active_items = repo.get_active()
-    inbox_added_count = len(active_items)
-    done_count = sum(1 for i in active_items if i.is_done())
+    from study_python.gtd.web.db_models import UserRow
+
+    user = db.query(UserRow).filter(UserRow.id == user_id).first()
+    inbox_added_count = user.total_items_count if user else 0
+    done_count = user.completed_items_count if user else 0
     completion_rate = (
         round(done_count / inbox_added_count * 100, 1) if inbox_added_count > 0 else 0.0
     )

@@ -18,6 +18,10 @@ class UserRow(Base):
     password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[str] = mapped_column(String(50), nullable=False)
 
+    # 累計カウンタ。物理削除されても減らない。
+    total_items_count: Mapped[int] = mapped_column(Integer, default=0)
+    completed_items_count: Mapped[int] = mapped_column(Integer, default=0)
+
 
 class NotificationRow(Base):
     """通知のDBテーブル定義."""
