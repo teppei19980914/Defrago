@@ -197,12 +197,8 @@ async def mark_all_read(
         NotificationRow.is_read == False,  # noqa: E712
     ).update({"is_read": True})
     db.flush()
-    rows = (
-        db.query(NotificationRow)
-        .filter(NotificationRow.user_id == user_id)
-        .order_by(NotificationRow.created_at.desc())
-        .all()
-    )
+    rows = db.query(NotificationRow).filter(NotificationRow.user_id == user_id).all()
+    rows.sort(key=_notification_sort_key, reverse=True)
     return templates.TemplateResponse(
         request,
         "partials/modal_inbox.html",
