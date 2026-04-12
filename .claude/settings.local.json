@@ -33,7 +33,12 @@
       "Bash(gh pr create --base main --title 'perf: v3.1.5 - DBコスト最適化 第一弾 \\(A+E+C\\)' --body ':*)",
       "Bash(gh pr create --base main --title 'fix: UI改善バッチ2 \\(ハンバーガー被り・一括操作・スクロール\\)' --body ':*)",
       "Bash(gh pr create --base main --title 'fix: 通知のバージョン順ソートとスクロール問題の横展開修正' --body ':*)",
-      "Bash(gh pr create --base main --title 'fix: v3.3.2 プロジェクト計画ウィザードの改善' --body ':*)"
+      "Bash(gh pr create --base main --title 'fix: v3.3.2 プロジェクト計画ウィザードの改善' --body ':*)",
+      "Bash(unzip -l \"C:/Users/SF02512/Backup/claude-backup-20260412.zip\")",
+      "Bash(unzip -o C:/Users/SF02512/Backup/claude-backup-20260412.zip projects/c--Users-SF02512-GitHub-Private-HomePage/memory/user_profile.md projects/c--Users-SF02512-GitHub-Private-GrowthEngine/memory/user_philosophy.md projects/c--Users-SF02512-GitHub-Private-mindflow/memory/project_concept.md projects/c--Users-SF02512-GitHub-Private-mindflow/memory/feedback_design_principles.md projects/c--Users-SF02512-GitHub-Private-mindflow/memory/feedback_no_hardcoding.md projects/c--Users-SF02512-GitHub-Private-mindflow/memory/feedback_release_checks.md projects/c--Users-SF02512-GitHub-Private-mindflow/memory/MEMORY.md projects/c--Users-SF02512-GitHub-Private-GrowthEngine/memory/MEMORY.md projects/c--Users-SF02512-GitHub-Private-GrowthEngine/memory/feedback_migration.md projects/c--Users-SF02512-GitHub-Private-GrowthEngine/memory/feedback_performance.md projects/c--Users-SF02512-GitHub-Private-GrowthEngine/memory/feedback_release_checklist.md projects/c--Users-SF02512-GitHub-Private-HomePage/memory/feedback_no_hardcoding.md)",
+      "Bash(unzip -o \"C:/Users/SF02512/Backup/claude-backup-20260412.zip\" \"projects/c--Users-SF02512-GitHub-Private-HomePage/memory/*\" \"projects/c--Users-SF02512-GitHub-Private-GrowthEngine/memory/*\" \"projects/c--Users-SF02512-GitHub-Private-mindflow/memory/*\")",
+      "Bash(python3 -c ':*)",
+      "Bash(./../Users/SF02512/GitHub/Private/Defrago/.venv/Scripts/python.exe -c ':*)"
     ]
   },
   "hooks": {
