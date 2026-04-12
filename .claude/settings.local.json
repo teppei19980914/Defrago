@@ -31,7 +31,9 @@
       "Bash(.venv/Scripts/python.exe -m pytest tests/gtd/web/test_iconbar.py::TestReleaseNotificationSync tests/gtd/web/test_iconbar.py::TestNotificationCleanup -x)",
       "Bash(.venv/Scripts/python.exe -m ruff check tests/gtd/web/test_iconbar.py --fix)",
       "Bash(gh pr create --base main --title 'perf: v3.1.5 - DBコスト最適化 第一弾 \\(A+E+C\\)' --body ':*)",
-      "Bash(gh pr create --base main --title 'fix: UI改善バッチ2 \\(ハンバーガー被り・一括操作・スクロール\\)' --body ':*)"
+      "Bash(gh pr create --base main --title 'fix: UI改善バッチ2 \\(ハンバーガー被り・一括操作・スクロール\\)' --body ':*)",
+      "Bash(gh pr create --base main --title 'fix: 通知のバージョン順ソートとスクロール問題の横展開修正' --body ':*)",
+      "Bash(gh pr create --base main --title 'fix: v3.3.2 プロジェクト計画ウィザードの改善' --body ':*)"
     ]
   },
   "hooks": {
