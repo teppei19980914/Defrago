@@ -12,6 +12,10 @@ from study_python.gtd.web.database import get_session_factory
 from study_python.gtd.web.db_repository import DbGtdRepository
 
 
+# セッション非操作タイムアウト（秒）。この時間操作がなければ自動ログアウト。
+SESSION_IDLE_TIMEOUT = 1800  # 30分
+
+
 UUID_PATTERN = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 )
@@ -55,6 +59,10 @@ def get_db_session() -> Generator[Session, None, None]:
 def require_auth(request: Request) -> str:
     """認証を要求し、user_idを返す.
 
+    セッションの非操作タイムアウトも検証する。SESSION_IDLE_TIMEOUT 秒以上
+    操作がなければセッションをクリアしてログイン画面にリダイレクトする。
+    操作があれば最終操作時刻を更新する。
+
     Args:
         request: HTTPリクエスト。
 
@@ -62,14 +70,30 @@ def require_auth(request: Request) -> str:
         認証済みユーザーのuser_id。
 
     Raises:
-        HTTPException: 未認証の場合。
+        HTTPException: 未認証またはセッションタイムアウトの場合。
     """
+    import time
+
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
             headers={"Location": "/login"},
         )
+
+    # セッション非操作タイムアウトチェック
+    now = time.time()
+    last_active = request.session.get("last_active", 0)
+    if last_active and (now - last_active) > SESSION_IDLE_TIMEOUT:
+        request.session.clear()
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": "/login"},
+        )
+
+    # 最終操作時刻を更新
+    request.session["last_active"] = now
+
     return str(user_id)
 
 

@@ -79,6 +79,7 @@ async def login(
         request.session.clear()
         request.session["user_id"] = user.id
         request.session["username"] = user.username
+        request.session["last_active"] = time.time()
         return RedirectResponse(url="/", status_code=302)
 
     _record_attempt(client_ip)
@@ -161,6 +162,7 @@ async def register(
     request.session.clear()
     request.session["user_id"] = user.id
     request.session["username"] = user.username
+    request.session["last_active"] = time.time()
     return RedirectResponse(url="/", status_code=302)
 
 

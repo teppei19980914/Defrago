@@ -171,7 +171,7 @@ def create_app() -> FastAPI:
         secret_key=settings.secret_key,
         https_only=not settings.debug,
         same_site="lax",
-        max_age=86400,
+        max_age=3600,
     )
 
     # Static files
