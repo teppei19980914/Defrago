@@ -52,8 +52,14 @@ def get_db_session() -> Generator[Session, None, None]:
         session.close()
 
 
+SESSION_IDLE_TIMEOUT = 1800  # 30分
+
+
 def require_auth(request: Request) -> str:
     """認証を要求し、user_idを返す.
+
+    セッションの非操作タイムアウトも検証する。SESSION_IDLE_TIMEOUT 秒以上
+    操作がなければセッションをクリアしてログイン画面にリダイレクトする。
 
     Args:
         request: HTTPリクエスト。
@@ -62,14 +68,27 @@ def require_auth(request: Request) -> str:
         認証済みユーザーのuser_id。
 
     Raises:
-        HTTPException: 未認証の場合。
+        HTTPException: 未認証またはセッションタイムアウトの場合。
     """
+    import time
+
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
             headers={"Location": "/login"},
         )
+
+    now = time.time()
+    last_active = request.session.get("last_active", 0)
+    if last_active and (now - last_active) > SESSION_IDLE_TIMEOUT:
+        request.session.clear()
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": "/login"},
+        )
+
+    request.session["last_active"] = now
     return str(user_id)
 
 
